@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { PrintableReceipt } from '../../components/PrintableReceipt';
 import api from '../../services/api';
-import { Plus, Printer, Search, Filter, AlertCircle, Loader2 } from 'lucide-react';
+import { Plus, Printer, Search, Filter, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 
 export const PaymentsPage: React.FC = () => {
@@ -69,22 +69,29 @@ export const PaymentsPage: React.FC = () => {
     }
   };
 
-  // Real-Time 3-Second Background Auto-Sync
+  // Real-Time Background Auto-Sync (paused while modal is open so dropdown doesn't close)
   useEffect(() => {
     fetchData();
     const interval = setInterval(() => {
-      fetchData(true);
-    }, 3000);
+      if (!isRecordModalOpen && !isReceiptOpen) {
+        fetchData(true);
+      }
+    }, 10000);
     return () => clearInterval(interval);
-  }, []);
+  }, [isRecordModalOpen, isReceiptOpen]);
 
   // Filtered Students for Modal Selection
   const filteredStudents = students.filter(s => {
-    const matchesSearch = !studentSearch || 
-      (s.fullName && s.fullName.toLowerCase().includes(studentSearch.toLowerCase())) ||
-      (s.registrationNumber && s.registrationNumber.toLowerCase().includes(studentSearch.toLowerCase()));
+    const q = studentSearch.trim().toLowerCase();
+    const matchesSearch = !q || 
+      (s.fullName && s.fullName.toLowerCase().includes(q)) ||
+      (s.registrationNumber && s.registrationNumber.toLowerCase().includes(q));
     
-    const matchesClass = !modalClassFilter || s.classId === modalClassFilter || s.class_id === modalClassFilter;
+    const matchesClass = !modalClassFilter || 
+      s.classId === modalClassFilter || 
+      s.class_id === modalClassFilter ||
+      s.className === modalClassFilter ||
+      s.className === classes.find(c => c.id === modalClassFilter)?.name;
 
     return matchesSearch && matchesClass;
   });
@@ -239,16 +246,19 @@ export const PaymentsPage: React.FC = () => {
 
         <div className="flex items-center gap-2 w-full md:w-auto">
           <Filter className="w-4 h-4 text-slate-400 shrink-0" />
-          <select
-            value={ledgerClassFilter}
-            onChange={(e) => setLedgerClassFilter(e.target.value)}
-            className="w-full md:w-48 bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-bold text-white focus:outline-none"
-          >
-            <option value="" className="bg-slate-900 text-white">-- All Classes --</option>
-            {classes.map(c => (
-              <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name}</option>
-            ))}
-          </select>
+          <div className="relative w-full md:w-48">
+            <select
+              value={ledgerClassFilter}
+              onChange={(e) => setLedgerClassFilter(e.target.value)}
+              className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 pr-8 text-xs font-bold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+            >
+              <option value="" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>-- All Classes --</option>
+              {classes.map(c => (
+                <option key={c.id} value={c.id} style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>{c.name}</option>
+              ))}
+            </select>
+            <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+          </div>
         </div>
       </div>
 
@@ -384,16 +394,19 @@ export const PaymentsPage: React.FC = () => {
               <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
                 Filter by Class
               </label>
-              <select
-                value={modalClassFilter}
-                onChange={(e) => setModalClassFilter(e.target.value)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 text-xs font-bold text-white focus:outline-none"
-              >
-                <option value="" className="bg-slate-900 text-white">-- All Classes --</option>
-                {classes.map(c => (
-                  <option key={c.id} value={c.id} className="bg-slate-900 text-white">{c.name}</option>
-                ))}
-              </select>
+              <div className="relative">
+                <select
+                  value={modalClassFilter}
+                  onChange={(e) => setModalClassFilter(e.target.value)}
+                  className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-1.5 pr-8 text-xs font-bold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>-- All Classes --</option>
+                  {classes.map(c => (
+                    <option key={c.id} value={c.id} style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>{c.name}</option>
+                  ))}
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
 
             <div>
@@ -415,22 +428,25 @@ export const PaymentsPage: React.FC = () => {
             <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
               Select Student * ({filteredStudents.length} available)
             </label>
-            <select
-              required
-              value={selectedStudentId}
-              onChange={(e) => setSelectedStudentId(e.target.value)}
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-2 text-xs font-bold text-white focus:outline-none focus:border-blue-500"
-            >
-              {filteredStudents.length === 0 ? (
-                <option value="" className="bg-slate-900 text-white">No students available for filter</option>
-              ) : (
-                filteredStudents.map(s => (
-                  <option key={s.id} value={s.id} className="bg-slate-900 text-white">
-                    {s.fullName} ({s.registrationNumber}) — {s.className || 'LKG'} (Bal: ₹ {s.feeSummary?.balance !== undefined ? s.feeSummary.balance.toLocaleString('en-IN') : '12,200'})
-                  </option>
-                ))
-              )}
-            </select>
+            <div className="relative">
+              <select
+                required
+                value={selectedStudentId}
+                onChange={(e) => setSelectedStudentId(e.target.value)}
+                className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 pr-9 text-xs font-bold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+              >
+                {filteredStudents.length === 0 ? (
+                  <option value="" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>No students available for filter</option>
+                ) : (
+                  filteredStudents.map(s => (
+                    <option key={s.id} value={s.id} style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
+                      {s.fullName} ({s.registrationNumber}) — {s.className || 'LKG'} (Bal: ₹ {s.feeSummary?.balance !== undefined ? s.feeSummary.balance.toLocaleString('en-IN') : '12,200'})
+                    </option>
+                  ))
+                )}
+              </select>
+              <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
+            </div>
           </div>
 
           {/* Real-time fetched Outstanding Balance Banner */}
@@ -471,17 +487,20 @@ export const PaymentsPage: React.FC = () => {
               <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
                 Payment Method *
               </label>
-              <select
-                value={paymentMethod}
-                onChange={(e) => setPaymentMethod(e.target.value as any)}
-                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-2 py-2 text-xs font-extrabold text-white focus:outline-none"
-              >
-                <option value="UPI" className="bg-slate-900 text-white">UPI / GPay / PhonePe</option>
-                <option value="cash" className="bg-slate-900 text-white">Cash</option>
-                <option value="bank_transfer" className="bg-slate-900 text-white">Bank Transfer / NEFT</option>
-                <option value="cheque" className="bg-slate-900 text-white">Cheque</option>
-                <option value="other" className="bg-slate-900 text-white">Other</option>
-              </select>
+              <div className="relative">
+                <select
+                  value={paymentMethod}
+                  onChange={(e) => setPaymentMethod(e.target.value as any)}
+                  className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl px-2.5 py-2 pr-8 text-xs font-extrabold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
+                >
+                  <option value="UPI" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>UPI / GPay / PhonePe</option>
+                  <option value="cash" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>Cash</option>
+                  <option value="bank_transfer" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>Bank Transfer / NEFT</option>
+                  <option value="cheque" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>Cheque</option>
+                  <option value="other" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>Other</option>
+                </select>
+                <ChevronDown className="w-4 h-4 text-slate-400 absolute right-2.5 top-1/2 -translate-y-1/2 pointer-events-none" />
+              </div>
             </div>
           </div>
 
