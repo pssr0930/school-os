@@ -2,7 +2,7 @@ import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/PageHeader';
 import { PrintableReceipt } from '../../components/PrintableReceipt';
 import api from '../../services/api';
-import { Plus, Printer, Search, Filter, AlertCircle } from 'lucide-react';
+import { Plus, Printer, Search, Filter, AlertCircle, Loader2 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 
 export const PaymentsPage: React.FC = () => {
@@ -33,6 +33,7 @@ export const PaymentsPage: React.FC = () => {
   // Receipt Modal State
   const [receiptData, setReceiptData] = useState<any>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [printingPaymentId, setPrintingPaymentId] = useState<string | null>(null);
 
   const fetchData = async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
@@ -177,13 +178,19 @@ export const PaymentsPage: React.FC = () => {
 
   const handleViewReceipt = async (paymentId: string) => {
     try {
+      setPrintingPaymentId(paymentId);
       const res = await api.get(`/payments/${paymentId}/receipt`);
-      if (res.data.success) {
+      if (res.data.success && res.data.data) {
         setReceiptData(res.data.data);
         setIsReceiptOpen(true);
+      } else {
+        alert('Could not find receipt details for this transaction.');
       }
-    } catch (err) {
-      console.error(err);
+    } catch (err: any) {
+      console.error('Failed to load receipt:', err);
+      alert(err.response?.data?.message || 'Failed to load receipt details. Please try again.');
+    } finally {
+      setPrintingPaymentId(null);
     }
   };
 
@@ -270,11 +277,16 @@ export const PaymentsPage: React.FC = () => {
 
               <div className="pt-2 border-t border-slate-800 flex justify-end">
                 <button
+                  disabled={printingPaymentId === p.id}
                   onClick={() => handleViewReceipt(p.id)}
-                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 font-extrabold text-xs rounded-xl transition-all active:scale-95"
+                  className="flex items-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 font-extrabold text-xs rounded-xl transition-all active:scale-95 disabled:opacity-50"
                 >
-                  <Printer className="w-3.5 h-3.5" />
-                  <span>Print A4 Receipt</span>
+                  {printingPaymentId === p.id ? (
+                    <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                  ) : (
+                    <Printer className="w-3.5 h-3.5" />
+                  )}
+                  <span>{printingPaymentId === p.id ? 'Loading...' : 'Print A4 Receipt'}</span>
                 </button>
               </div>
             </div>
@@ -322,11 +334,16 @@ export const PaymentsPage: React.FC = () => {
                   </td>
                   <td className="py-3.5 px-6 text-center">
                     <button
+                      disabled={printingPaymentId === p.id}
                       onClick={() => handleViewReceipt(p.id)}
-                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 font-bold text-xs rounded-xl transition-colors mx-auto"
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-slate-800 hover:bg-slate-700 text-blue-400 border border-blue-500/30 font-bold text-xs rounded-xl transition-colors mx-auto disabled:opacity-50"
                     >
-                      <Printer className="w-3.5 h-3.5" />
-                      <span>Print A4 Receipt</span>
+                      {printingPaymentId === p.id ? (
+                        <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" />
+                      ) : (
+                        <Printer className="w-3.5 h-3.5" />
+                      )}
+                      <span>{printingPaymentId === p.id ? 'Loading...' : 'Print A4 Receipt'}</span>
                     </button>
                   </td>
                 </tr>
@@ -489,7 +506,7 @@ export const PaymentsPage: React.FC = () => {
           title={`Printable A4 Dual Receipt Preview — ${receiptData.payment?.receiptNumber}`}
           maxWidth="5xl"
         >
-          <PrintableReceipt receipt={receiptData} />
+          <PrintableReceipt receipt={receiptData} onClose={() => setIsReceiptOpen(false)} />
         </Modal>
       )}
     </div>

@@ -22,9 +22,12 @@ import {
   PlusCircle,
   Tag,
   Wallet,
-  AlertTriangle
+  AlertTriangle,
+  Printer,
+  Loader2
 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
+import { PrintableReceipt } from '../../components/PrintableReceipt';
 
 export const StudentProfilePage: React.FC = () => {
   const { studentId } = useParams();
@@ -44,6 +47,29 @@ export const StudentProfilePage: React.FC = () => {
   // Update Previous Due Modal State
   const [isUpdateDueOpen, setIsUpdateDueOpen] = useState(false);
   const [previousDueAmount, setPreviousDueAmount] = useState('');
+
+  // Receipt Modal State
+  const [receiptData, setReceiptData] = useState<any>(null);
+  const [isReceiptOpen, setIsReceiptOpen] = useState(false);
+  const [printingPaymentId, setPrintingPaymentId] = useState<string | null>(null);
+
+  const handlePrintReceipt = async (paymentId: string) => {
+    try {
+      setPrintingPaymentId(paymentId);
+      const res = await api.get(`/payments/${paymentId}/receipt`);
+      if (res.data.success && res.data.data) {
+        setReceiptData(res.data.data);
+        setIsReceiptOpen(true);
+      } else {
+        alert('Could not find receipt details for this transaction.');
+      }
+    } catch (err: any) {
+      console.error('Failed to load receipt:', err);
+      alert(err.response?.data?.message || 'Failed to load receipt.');
+    } finally {
+      setPrintingPaymentId(null);
+    }
+  };
 
   const fetchStudentProfile = async () => {
     try {
