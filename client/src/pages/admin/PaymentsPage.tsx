@@ -1,9 +1,9 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useMemo } from 'react';
 import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { PrintableReceipt } from '../../components/PrintableReceipt';
 import api from '../../services/api';
-import { Plus, Printer, Search, Filter, AlertCircle, Loader2, ChevronDown } from 'lucide-react';
+import { Plus, Printer, Search, Filter, AlertCircle, Loader2, ChevronDown, CheckCircle2 } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 
 export const PaymentsPage: React.FC = () => {
@@ -18,18 +18,11 @@ export const PaymentsPage: React.FC = () => {
   const [ledgerClassFilter, setLedgerClassFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
 
-  useEffect(() => {
-    if (urlStudentId) {
-      setSelectedStudentId(urlStudentId);
-      setIsRecordModalOpen(true);
-    }
-  }, [urlStudentId]);
-
   // Modal State
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
   const [modalClassFilter, setModalClassFilter] = useState('');
   const [studentSearch, setStudentSearch] = useState('');
-  const [selectedStudentId, setSelectedStudentId] = useState('');
+  const [selectedStudentId, setSelectedStudentId] = useState(urlStudentId || '');
   const [selectedStudentFeeSummary, setSelectedStudentFeeSummary] = useState<any>(null);
   const [isFeeLoading, setIsFeeLoading] = useState(false);
   const [modalError, setModalError] = useState('');
@@ -45,6 +38,13 @@ export const PaymentsPage: React.FC = () => {
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [printingPaymentId, setPrintingPaymentId] = useState<string | null>(null);
 
+  useEffect(() => {
+    if (urlStudentId) {
+      setSelectedStudentId(urlStudentId);
+      setIsRecordModalOpen(true);
+    }
+  }, [urlStudentId]);
+
   const fetchData = async (isSilent = false) => {
     if (!isSilent) setIsLoading(true);
     try {
@@ -54,14 +54,11 @@ export const PaymentsPage: React.FC = () => {
         api.get('/classes')
       ]);
 
-      if (payRes.data.success) setPayments(payRes.data.data);
-      if (stuRes.data.success) {
+      if (payRes.data?.success) setPayments(payRes.data.data);
+      if (stuRes.data?.success) {
         setStudents(stuRes.data.data);
-        if (stuRes.data.data.length > 0 && !selectedStudentId) {
-          setSelectedStudentId(stuRes.data.data[0].id);
-        }
       }
-      if (clsRes.data.success) setClasses(clsRes.data.data);
+      if (clsRes.data?.success) setClasses(clsRes.data.data);
     } catch (err) {
       console.warn('Failed to load payments page data:', err);
     } finally {
@@ -69,80 +66,125 @@ export const PaymentsPage: React.FC = () => {
     }
   };
 
-  // Real-Time Background Auto-Sync (paused while modal is open so dropdown doesn't close)
+  // Initial Data Load
   useEffect(() => {
     fetchData();
+  }, []);
+
+  // Real-Time Background Auto-Sync (silent polling paused while modal or receipt is open)
+  useEffect(() => {
     const interval = setInterval(() => {
       if (!isRecordModalOpen && !isReceiptOpen) {
         fetchData(true);
       }
-    }, 10000);
+    }, 15000);
     return () => clearInterval(interval);
   }, [isRecordModalOpen, isReceiptOpen]);
 
-  // Filtered Students for Modal Selection
-  const filteredStudents = students.filter(s => {
-    const q = studentSearch.trim().toLowerCase();
-    const matchesSearch = !q || 
-      (s.fullName && s.fullName.toLowerCase().includes(q)) ||
-      (s.registrationNumber && s.registrationNumber.toLowerCase().includes(q));
-    
-    const matchesClass = !modalClassFilter || 
-      s.classId === modalClassFilter || 
-      s.class_id === modalClassFilter ||
-      s.className === modalClassFilter ||
-      s.className === classes.find(c => c.id === modalClassFilter)?.name;
+  // Memoized Filtered Students for Modal Selection
+  const filteredStudents = useMemo(() => {
+    return students.filter(s => {
+      const q = studentSearch.trim().toLowerCase();
+      const matchesSearch = !q || 
+        (s.fullName && s.fullName.toLowerCase().includes(q)) ||
+        (s.registrationNumber && s.registrationNumber.toLowerCase().includes(q));
+      
+      const matchesClass = !modalClassFilter || 
+        s.classId === modalClassFilter || 
+        s.class_id === modalClassFilter ||
+        s.className === modalClassFilter ||
+        s.className === classes.find(c => c.id === modalClassFilter)?.name;
 
-    return matchesSearch && matchesClass;
-  });
+      return matchesSearch && matchesClass;
+    });
+  }, [students, studentSearch, modalClassFilter, classes]);
 
-  // Ensure selectedStudentId stays synchronized with filteredStudents list
+  // Synchronize selectedStudentId smoothly without flickering or unwanted overrides
   useEffect(() => {
+    if (urlStudentId && students.some(s => s.id === urlStudentId)) {
+      setSelectedStudentId(urlStudentId);
+      return;
+    }
+
     if (filteredStudents.length > 0) {
-      if (!selectedStudentId || !filteredStudents.some(s => s.id === selectedStudentId)) {
+      const isAlreadySelected = filteredStudents.some(s => s.id === selectedStudentId);
+      if (!selectedStudentId || !isAlreadySelected) {
         setSelectedStudentId(filteredStudents[0].id);
       }
-    } else {
+    } else if (students.length > 0) {
       setSelectedStudentId('');
     }
-  }, [modalClassFilter, studentSearch, students]);
+  }, [filteredStudents, urlStudentId, students]);
 
-  // Fetch real-time accurate fee summary for selected student
-  useEffect(() => {
-    if (selectedStudentId) {
-      setIsFeeLoading(true);
-      api.get(`/fees/student-fees/${selectedStudentId}`)
-        .then(res => {
-          if (res.data.success && res.data.feeSummary) {
-            setSelectedStudentFeeSummary(res.data.feeSummary);
-          } else {
-            setSelectedStudentFeeSummary(null);
-          }
-        })
-        .catch(err => {
-          console.warn('Fee summary fetch error:', err);
-          setSelectedStudentFeeSummary(null);
-        })
-        .finally(() => {
-          setIsFeeLoading(false);
-        });
-    } else {
-      setSelectedStudentFeeSummary(null);
+  // Resolve current active student object synchronously
+  const currentStudent = useMemo(() => {
+    if (!selectedStudentId) return filteredStudents[0] || null;
+    return students.find(s => s.id === selectedStudentId) || (filteredStudents.length > 0 ? filteredStudents[0] : null);
+  }, [students, selectedStudentId, filteredStudents]);
+
+  // Seamless fee summary: prioritizes freshly loaded data for the exact selected student, otherwise uses student.feeSummary
+  const activeFeeSummary = useMemo(() => {
+    if (
+      selectedStudentFeeSummary &&
+      (selectedStudentFeeSummary.studentId === selectedStudentId ||
+       selectedStudentFeeSummary.student_id === selectedStudentId)
+    ) {
+      return selectedStudentFeeSummary;
     }
+    return currentStudent?.feeSummary || null;
+  }, [selectedStudentFeeSummary, selectedStudentId, currentStudent]);
+
+  const currentBalance = activeFeeSummary?.balance !== undefined ? Number(activeFeeSummary.balance) : 0;
+
+  // Real-time server fee summary fetch for selected student with race-condition protection
+  useEffect(() => {
+    if (!selectedStudentId) {
+      setSelectedStudentFeeSummary(null);
+      return;
+    }
+
+    let isMounted = true;
+    setIsFeeLoading(true);
+
+    api.get(`/fees/student-fees/${selectedStudentId}`)
+      .then(res => {
+        if (isMounted) {
+          if (res.data?.success && res.data?.feeSummary) {
+            setSelectedStudentFeeSummary(res.data.feeSummary);
+          }
+        }
+      })
+      .catch(err => {
+        console.warn('Fee summary fetch error:', err);
+      })
+      .finally(() => {
+        if (isMounted) {
+          setIsFeeLoading(false);
+        }
+      });
+
+    return () => {
+      isMounted = false;
+    };
   }, [selectedStudentId]);
 
   // Filtered Payments for Main Ledger Table
-  const filteredPayments = payments.filter(p => {
-    const q = ledgerSearch.toLowerCase();
-    const matchesSearch = !ledgerSearch || 
-      (p.receiptNumber && p.receiptNumber.toLowerCase().includes(q)) ||
-      (p.studentName && p.studentName.toLowerCase().includes(q)) ||
-      (p.registrationNumber && p.registrationNumber.toLowerCase().includes(q));
+  const filteredPayments = useMemo(() => {
+    return payments.filter(p => {
+      const q = ledgerSearch.toLowerCase().trim();
+      const matchesSearch = !ledgerSearch || 
+        (p.receiptNumber && p.receiptNumber.toLowerCase().includes(q)) ||
+        (p.studentName && p.studentName.toLowerCase().includes(q)) ||
+        (p.registrationNumber && p.registrationNumber.toLowerCase().includes(q));
 
-    const matchesClass = !ledgerClassFilter || p.classId === ledgerClassFilter || p.class_id === ledgerClassFilter || p.className === classes.find(c => c.id === ledgerClassFilter)?.name;
+      const matchesClass = !ledgerClassFilter || 
+        p.classId === ledgerClassFilter || 
+        p.class_id === ledgerClassFilter || 
+        p.className === classes.find(c => c.id === ledgerClassFilter)?.name;
 
-    return matchesSearch && matchesClass;
-  });
+      return matchesSearch && matchesClass;
+    });
+  }, [payments, ledgerSearch, ledgerClassFilter, classes]);
 
   const handleRecordPayment = async (e: React.FormEvent) => {
     e.preventDefault();
@@ -432,45 +474,76 @@ export const PaymentsPage: React.FC = () => {
               <select
                 required
                 value={selectedStudentId}
-                onChange={(e) => setSelectedStudentId(e.target.value)}
+                onChange={(e) => {
+                  setSelectedStudentId(e.target.value);
+                  setSelectedStudentFeeSummary(null);
+                }}
                 className="w-full appearance-none bg-slate-800 border border-slate-700 rounded-xl px-3 py-2.5 pr-9 text-xs font-bold text-white focus:outline-none focus:border-blue-500 cursor-pointer"
               >
                 {filteredStudents.length === 0 ? (
                   <option value="" style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>No students available for filter</option>
                 ) : (
-                  filteredStudents.map(s => (
-                    <option key={s.id} value={s.id} style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
-                      {s.fullName} ({s.registrationNumber}) — {s.className || 'LKG'} (Bal: ₹ {s.feeSummary?.balance !== undefined ? s.feeSummary.balance.toLocaleString('en-IN') : '12,200'})
-                    </option>
-                  ))
+                  filteredStudents.map(s => {
+                    const bal = s.feeSummary?.balance !== undefined ? Number(s.feeSummary.balance) : 0;
+                    const balLabel = bal <= 0 ? 'PAID IN FULL ✓' : `Bal: ₹ ${bal.toLocaleString('en-IN')}`;
+                    return (
+                      <option key={s.id} value={s.id} style={{ backgroundColor: '#1e293b', color: '#ffffff' }}>
+                        {s.fullName} ({s.registrationNumber}) — {s.className || 'Class'} ({balLabel})
+                      </option>
+                    );
+                  })
                 )}
               </select>
               <ChevronDown className="w-4 h-4 text-slate-400 absolute right-3 top-1/2 -translate-y-1/2 pointer-events-none" />
             </div>
           </div>
 
-          {/* Real-time fetched Outstanding Balance Banner */}
+          {/* Real-time Outstanding Balance Banner — Clean, Zero-Flicker */}
           <div className="p-3 bg-blue-950/40 border border-blue-500/30 rounded-xl flex items-center justify-between">
-            <span className="text-xs font-bold text-slate-300 uppercase tracking-wide">
-              Current Outstanding Fee Balance:
-            </span>
-            <span className="font-mono font-black text-blue-400 text-sm sm:text-base">
-              {isFeeLoading ? 'Fetching...' : selectedStudentFeeSummary ? (
-                selectedStudentFeeSummary.balance <= 0 ? (
-                  <span className="text-emerald-400 font-extrabold text-xs sm:text-sm font-sans tracking-wide">PAID IN FULL ✓</span>
-                ) : (
-                  `₹ ${selectedStudentFeeSummary.balance.toLocaleString('en-IN')}`
-                )
-              ) : '₹ 12,200'}
-            </span>
+            <div className="flex flex-col">
+              <span className="text-[11px] font-bold text-slate-300 uppercase tracking-wide">
+                Current Outstanding Fee Balance:
+              </span>
+              {currentStudent && (
+                <span className="text-[10px] text-slate-400 font-semibold">
+                  For {currentStudent.fullName} ({currentStudent.className || 'Class'})
+                </span>
+              )}
+            </div>
+            <div className="text-right">
+              {isFeeLoading && !activeFeeSummary ? (
+                <span className="text-slate-400 font-sans font-medium text-xs flex items-center gap-1.5">
+                  <Loader2 className="w-3.5 h-3.5 animate-spin text-blue-400" /> Fetching...
+                </span>
+              ) : currentBalance <= 0 ? (
+                <span className="px-2.5 py-1 bg-emerald-500/10 border border-emerald-500/30 text-emerald-400 font-extrabold text-xs sm:text-sm font-sans tracking-wide rounded-lg inline-flex items-center gap-1">
+                  <CheckCircle2 className="w-3.5 h-3.5" /> PAID IN FULL
+                </span>
+              ) : (
+                <span className="font-mono font-black text-amber-400 text-sm sm:text-base">
+                  ₹ {currentBalance.toLocaleString('en-IN')}
+                </span>
+              )}
+            </div>
           </div>
 
           {/* Payment Amount & Method Input */}
           <div className="grid grid-cols-2 gap-2">
             <div>
-              <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
-                Payment Amount (INR) *
-              </label>
+              <div className="flex items-center justify-between mb-1">
+                <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider">
+                  Payment Amount (INR) *
+                </label>
+                {currentBalance > 0 && (
+                  <button
+                    type="button"
+                    onClick={() => setAmount(String(currentBalance))}
+                    className="text-[10px] text-blue-400 hover:text-blue-300 font-bold underline cursor-pointer transition-colors"
+                  >
+                    Full Due
+                  </button>
+                )}
+              </div>
               <input
                 required
                 type="number"
@@ -504,18 +577,33 @@ export const PaymentsPage: React.FC = () => {
             </div>
           </div>
 
-          {/* Reference Number Input */}
-          <div>
-            <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
-              Transaction Ref / Cheque No
-            </label>
-            <input
-              type="text"
-              value={transactionReference}
-              onChange={(e) => setTransactionReference(e.target.value)}
-              placeholder="e.g. UPI-9876543210 or Cheque #000123"
-              className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-white focus:outline-none placeholder-slate-400"
-            />
+          {/* Reference Number & Remarks Input */}
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-2">
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
+                Transaction Ref / Cheque No
+              </label>
+              <input
+                type="text"
+                value={transactionReference}
+                onChange={(e) => setTransactionReference(e.target.value)}
+                placeholder="e.g. UPI-9876543210 or Cheque #000123"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-white focus:outline-none placeholder-slate-400"
+              />
+            </div>
+
+            <div>
+              <label className="block text-[10px] font-extrabold text-slate-300 uppercase tracking-wider mb-1">
+                Notes / Remarks (Optional)
+              </label>
+              <input
+                type="text"
+                value={notes}
+                onChange={(e) => setNotes(e.target.value)}
+                placeholder="e.g. Paid at administrative desk"
+                className="w-full bg-slate-800 border border-slate-700 rounded-xl px-3 py-1.5 text-xs font-medium text-white focus:outline-none placeholder-slate-400"
+              />
+            </div>
           </div>
 
           <button
