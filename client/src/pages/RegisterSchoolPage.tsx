@@ -58,7 +58,7 @@ export const RegisterSchoolPage: React.FC = () => {
 
     try {
       const res = await api.post('/schools/register', {
-        name: formData.name,
+        schoolName: formData.name,
         schoolCode: formData.schoolCode,
         address: formData.address,
         city: formData.city,
