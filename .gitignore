@@ -15,7 +15,6 @@ server/dist/
 server/.env
 
 # Local database store (runtime data, not source)
-server/db_store.json
 
 # Logs
 *.log
