@@ -65,10 +65,31 @@ router.get('/public-info', (req, res) => {
 // GET /api/schools/lookup/:code (Validates and retrieves school by school code)
 router.get('/lookup/:code', (req, res) => {
   const code = (req.params.code || '').trim().toUpperCase();
-  const school = dbStore.schools.find(s => 
+  let school = dbStore.schools.find(s => 
     (s.schoolCode || (s as any).school_code || '').toUpperCase() === code ||
     (s.name || '').toUpperCase().includes(code)
   );
+
+  // Fallback for default demo school MHS when database is initializing or recovering
+  if (!school && (code === 'MHS' || code.includes('MURTHY') || dbStore.schools.length === 0)) {
+    console.warn(`⚠️ [School Routes Warning] School code "${code}" lookup fallback used for default institution.`);
+    school = dbStore.schools.find(s => (s.schoolCode || (s as any).school_code) === 'MHS') || {
+      id: 'sch-1786045901898',
+      name: 'Murthy High School',
+      schoolCode: 'MHS',
+      school_code: 'MHS',
+      motto: 'Empowering Minds, Shaping Futures & Inspiring Leaders',
+      logoUrl: 'https://murthy-school-website.vercel.app/assets/school-logo.png',
+      logo_url: 'https://murthy-school-website.vercel.app/assets/school-logo.png',
+      address: 'Sarpavaram police station road, near SRMT mall',
+      city: 'kakinada',
+      phone: '9121454554',
+      email: 'pssr0930@gmail.com'
+    };
+    if (!dbStore.schools.some(s => (s.schoolCode || (s as any).school_code) === 'MHS')) {
+      dbStore.schools.push(school);
+    }
+  }
 
   if (!school) {
     return res.status(404).json({

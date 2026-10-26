@@ -508,6 +508,172 @@ class InStore {
         console.warn('[Disk Store Load Error]', err);
       }
     }
+
+    // Default Seed Fallback: Ensure MHS and initial administrative baseline exist
+    // even on fresh cloud instances (e.g. Render) before Supabase sync completes
+    if (this.schools.length === 0) {
+      this.seedDefaultData();
+    }
+  }
+
+  public seedDefaultData() {
+    const schoolId = 'sch-1786045901898';
+    const ayId = 'ay-1786045901898';
+    
+    this.schools = [{
+      id: schoolId,
+      name: 'Murthy High School',
+      school_code: 'MHS',
+      schoolCode: 'MHS',
+      address: 'Sarpavaram police station road, near SRMT mall',
+      city: 'kakinada',
+      state: 'Andhra Pradesh',
+      postal_code: '533005',
+      postalCode: '533005',
+      phone: '9121454554',
+      email: 'pssr0930@gmail.com',
+      website: '',
+      logo_url: 'https://murthy-school-website.vercel.app/assets/school-logo.png',
+      logoUrl: 'https://murthy-school-website.vercel.app/assets/school-logo.png',
+      default_currency: 'INR',
+      defaultCurrency: 'INR',
+      attendance_cutoff_time: '10:30',
+      attendanceCutoffTime: '10:30',
+      attendance_sms_enabled: true,
+      attendanceSmsEnabled: true,
+      registration_prefix: 'REG',
+      registrationPrefix: 'REG',
+      created_at: '2026-08-06T19:51:41.898Z',
+      createdAt: '2026-08-06T19:51:41.898Z'
+    }];
+
+    this.profiles = [
+      {
+        id: 'd0a0e00e-ff79-4949-8dd0-9e077a5dd676',
+        auth_user_id: 'd0a0e00e-ff79-4949-8dd0-9e077a5dd676',
+        authUserId: 'd0a0e00e-ff79-4949-8dd0-9e077a5dd676',
+        full_name: 'pssr0930',
+        fullName: 'pssr0930',
+        email: 'pssr0930@gmail.com',
+        phone: '9121454554',
+        password: 'password123',
+        role: 'admin',
+        created_at: '2026-10-24T08:12:53.431Z'
+      },
+      {
+        id: 'usr-1786045901898',
+        auth_user_id: 'auth-usr-1786045901898',
+        authUserId: 'auth-usr-1786045901898',
+        full_name: 'Swetha',
+        fullName: 'Swetha',
+        email: 'MHS01ADM',
+        phone: '9390845399',
+        password: 'password',
+        role: 'admin',
+        created_at: '2026-08-06T19:51:41.898Z'
+      },
+      {
+        id: 'dd6dcef1-1892-43b4-b119-ee023f19ef5f',
+        auth_user_id: 'ef989146-aebd-4419-857b-b6c6383d1a5c',
+        authUserId: 'ef989146-aebd-4419-857b-b6c6383d1a5c',
+        full_name: 'Ram',
+        fullName: 'Ram',
+        email: 'MHS01STF',
+        phone: '9121454554',
+        password: 'MHS01STF2026',
+        role: 'staff',
+        created_at: '2026-08-09T16:06:32.224Z'
+      }
+    ];
+
+    this.schoolMembers = [
+      {
+        id: 'sm-1786045901898',
+        school_id: schoolId,
+        schoolId: schoolId,
+        user_id: 'usr-1786045901898',
+        userId: 'usr-1786045901898',
+        role: 'admin',
+        status: 'active'
+      },
+      {
+        id: 'f7ef7478-51a7-415f-b94e-c47239869941',
+        school_id: schoolId,
+        schoolId: schoolId,
+        user_id: 'd0a0e00e-ff79-4949-8dd0-9e077a5dd676',
+        userId: 'd0a0e00e-ff79-4949-8dd0-9e077a5dd676',
+        role: 'admin',
+        status: 'active'
+      },
+      {
+        id: '5e642edb-c052-4bfe-99d5-25b8b32837e6',
+        school_id: schoolId,
+        schoolId: schoolId,
+        user_id: 'dd6dcef1-1892-43b4-b119-ee023f19ef5f',
+        userId: 'dd6dcef1-1892-43b4-b119-ee023f19ef5f',
+        role: 'staff',
+        status: 'active',
+        employee_id: 'MHS01STF',
+        employeeId: 'MHS01STF'
+      }
+    ];
+
+    this.staffProfiles = [
+      {
+        id: 'dd6dcef1-1892-43b4-b119-ee023f19ef5f',
+        school_id: schoolId,
+        user_id: 'dd6dcef1-1892-43b4-b119-ee023f19ef5f',
+        employeeId: 'MHS01STF',
+        designation: 'Teacher',
+        joiningDate: '2026-06-01',
+        qualification: 'B.Ed',
+        phone: '9121454554',
+        password: 'MHS01STF2026',
+        address: 'Kakinada',
+        status: 'active'
+      }
+    ];
+
+    this.academicYears = [{
+      id: ayId,
+      school_id: schoolId,
+      schoolId: schoolId,
+      name: '2026-2027',
+      start_date: '2026-06-01',
+      startDate: '2026-06-01',
+      end_date: '2027-04-30',
+      endDate: '2027-04-30',
+      is_current: true,
+      isCurrent: true
+    }];
+
+    const standardClasses = [
+      'LKG', 'UKG', 'Class 1', 'Class 2', 'Class 3', 'Class 4', 
+      'Class 5', 'Class 6', 'Class 7', 'Class 8', 'Class 9', 'Class 10'
+    ];
+
+    this.classes = standardClasses.map((name, idx) => ({
+      id: `cls-mhs-${idx + 1}`,
+      school_id: schoolId,
+      schoolId: schoolId,
+      name,
+      display_order: idx + 1,
+      displayOrder: idx + 1
+    }));
+
+    this.sections = [];
+    this.classes.forEach(c => {
+      ['A', 'B'].forEach((secName, sIdx) => {
+        this.sections.push({
+          id: `sec-${c.id}-${sIdx + 1}`,
+          school_id: schoolId,
+          schoolId: schoolId,
+          class_id: c.id,
+          classId: c.id,
+          name: secName
+        });
+      });
+    });
   }
 }
 
