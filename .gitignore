@@ -12,9 +12,15 @@ server/dist/
 .env
 .env.local
 .env.*.local
+*.env
+*.env.*
 server/.env
+client/.env
 
 # Local database store (runtime data, not source)
+server/db_store.json
+db_store.json
+*.db_store.json
 
 # Logs
 *.log

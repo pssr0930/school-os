@@ -2,6 +2,7 @@ import express from 'express';
 import cors from 'cors';
 import rateLimit from 'express-rate-limit';
 import { env } from './config/env';
+import { dbStore } from './config/supabase';
 import { errorHandler } from './middleware/errorHandler';
 
 import authRoutes from './routes/auth.routes';
@@ -97,12 +98,26 @@ app.get('/health', (req, res) => {
 app.use(errorHandler);
 
 const PORT = env.PORT || 5000;
-app.listen(PORT, () => {
-  console.log(`====================================================`);
-  console.log(`🚀 SCHOOL OS API SERVER IS RUNNING ON PORT ${PORT}`);
-  console.log(`👉 API root: http://localhost:${PORT}/`);
-  console.log(`👉 Health check: http://localhost:${PORT}/health`);
-  console.log(`====================================================`);
+
+const startServer = async () => {
+  try {
+    await dbStore.loadFromSupabase();
+  } catch (err: any) {
+    console.warn('[Startup Supabase Load Warning]', err.message || err);
+  }
+
+  app.listen(PORT, () => {
+    console.log(`====================================================`);
+    console.log(`🚀 SCHOOL OS API SERVER IS RUNNING ON PORT ${PORT}`);
+    console.log(`👉 API root: http://localhost:${PORT}/`);
+    console.log(`👉 Health check: http://localhost:${PORT}/health`);
+    console.log(`====================================================`);
+  });
+};
+
+startServer().catch(err => {
+  console.error('[Fatal Server Startup Error]', err);
+  process.exit(1);
 });
 
 export default app;

@@ -98,6 +98,9 @@ router.get('/lookup/:code', (req, res) => {
 
 // GET /api/schools/public-list (Lightweight list of registered schools for portal discovery)
 router.get('/public-list', (req, res) => {
+  if (!dbStore.schools || dbStore.schools.length === 0) {
+    console.warn('⚠️ [School Routes Warning] dbStore.schools is empty. /api/schools/public-list returning fallback demo school MHS.');
+  }
   const list = (dbStore.schools.length > 0 ? dbStore.schools : [{
     id: '8f3b4c10-91a2-4d5e-8b1c-3f5a7b9c1d2e',
     name: 'Murthy High School',

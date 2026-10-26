@@ -3,9 +3,16 @@ const ws = require('ws');
 const fs = require('fs');
 const path = require('path');
 const crypto = require('crypto');
+require('dotenv').config({ path: path.resolve(__dirname, '../../.env') });
+require('dotenv').config();
 
-const url = 'https://nzfasftoimnfnuvakwdc.supabase.co';
-const serviceKey = 'eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9.eyJpc3MiOiJzdXBhYmFzZSIsInJlZiI6Im56ZmFzZnRvaW1uZm51dmFrd2RjIiwicm9sZSI6InNlcnZpY2Vfcm9sZSIsImlhdCI6MTc4NjAzODM5MiwiZXhwIjoyMTAxNjE0MzkyfQ.QQF-swl9wMg7NV5SEaP4ioCzyQyMUYDhQlofh_PX5Ok';
+const url = process.env.SUPABASE_URL || 'https://nzfasftoimnfnuvakwdc.supabase.co';
+const serviceKey = process.env.SUPABASE_SERVICE_ROLE_KEY;
+
+if (!serviceKey) {
+  console.error('SUPABASE_SERVICE_ROLE_KEY is required in .env');
+  process.exit(1);
+}
 
 const supabase = createClient(url, serviceKey, {
   auth: { persistSession: false },
