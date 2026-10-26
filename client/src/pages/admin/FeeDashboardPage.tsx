@@ -286,7 +286,7 @@ export const FeeDashboardPage: React.FC = () => {
           </div>
 
           <button
-            onClick={() => navigate('/admin/payments')}
+            onClick={() => navigate(`${basePath}/payments`)}
             className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
           >
             <Receipt className="w-4 h-4" />

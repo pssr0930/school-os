@@ -270,6 +270,13 @@ export const StudentProfilePage: React.FC = () => {
 
             <div className="flex items-center gap-2 shrink-0 flex-wrap">
               <button
+                onClick={() => navigate(`${basePath}/payments?studentId=${student.id}`)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-95"
+              >
+                <Receipt className="w-3.5 h-3.5" />
+                <span>Record Payment</span>
+              </button>
+              <button
                 onClick={() => setIsUpdateDueOpen(true)}
                 className="px-2.5 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 border border-amber-200 font-bold text-xs rounded-xl transition-colors"
               >
@@ -584,8 +591,15 @@ export const StudentProfilePage: React.FC = () => {
       {/* PAYMENT HISTORY TAB */}
       {activeTab === 'payments' && (
         <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-          <div className="p-3.5 border-b border-slate-200">
+          <div className="p-3.5 border-b border-slate-200 flex items-center justify-between">
             <h3 className="font-bold text-xs text-slate-900">Payment History Logs</h3>
+            <button
+              onClick={() => navigate(`${basePath}/payments?studentId=${student.id}`)}
+              className="flex items-center gap-1.5 px-3 py-1.5 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-95"
+            >
+              <Receipt className="w-3.5 h-3.5" />
+              <span>Record New Payment</span>
+            </button>
           </div>
           <table className="w-full text-left border-collapse text-xs">
             <thead>

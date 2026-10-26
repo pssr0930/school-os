@@ -1,4 +1,5 @@
 import React, { useState, useEffect } from 'react';
+import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { PrintableReceipt } from '../../components/PrintableReceipt';
 import api from '../../services/api';
@@ -6,6 +7,8 @@ import { Plus, Printer, Search, Filter, AlertCircle, Loader2 } from 'lucide-reac
 import { Modal } from '../../components/Modal';
 
 export const PaymentsPage: React.FC = () => {
+  const [searchParams] = useSearchParams();
+  const urlStudentId = searchParams.get('studentId');
   const [payments, setPayments] = useState<any[]>([]);
   const [students, setStudents] = useState<any[]>([]);
   const [classes, setClasses] = useState<any[]>([]);
@@ -14,6 +17,13 @@ export const PaymentsPage: React.FC = () => {
   const [ledgerSearch, setLedgerSearch] = useState('');
   const [ledgerClassFilter, setLedgerClassFilter] = useState('');
   const [isLoading, setIsLoading] = useState(true);
+
+  useEffect(() => {
+    if (urlStudentId) {
+      setSelectedStudentId(urlStudentId);
+      setIsRecordModalOpen(true);
+    }
+  }, [urlStudentId]);
 
   // Modal State
   const [isRecordModalOpen, setIsRecordModalOpen] = useState(false);
@@ -131,7 +141,8 @@ export const PaymentsPage: React.FC = () => {
     e.preventDefault();
     setModalError('');
 
-    if (!selectedStudentId) {
+    const targetStudentId = selectedStudentId || (filteredStudents.length > 0 ? filteredStudents[0].id : '');
+    if (!targetStudentId) {
       setModalError('Please select a student from the dropdown list.');
       return;
     }
@@ -146,11 +157,11 @@ export const PaymentsPage: React.FC = () => {
 
     try {
       const res = await api.post('/payments', {
-        studentId: selectedStudentId,
+        studentId: targetStudentId,
         amount: numericAmount,
         paymentMethod,
-        transactionReference,
-        notes
+        transactionReference: transactionReference?.trim() || undefined,
+        notes: notes?.trim() || undefined
       });
 
       if (res.data.success) {

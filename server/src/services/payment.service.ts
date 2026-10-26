@@ -1,6 +1,15 @@
 import { dbStore, supabaseAdmin } from '../config/supabase';
 import { PaymentItem } from '../types';
 import { StudentService } from './student.service';
+import crypto from 'crypto';
+
+function toUuid(idStr: string): string {
+  if (!idStr) return crypto.randomUUID();
+  const uuidRegex = /^[0-9a-f]{8}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{4}-[0-9a-f]{12}$/i;
+  if (uuidRegex.test(idStr)) return idStr;
+  const hash = crypto.createHash('md5').update(idStr).digest('hex');
+  return `${hash.substring(0,8)}-${hash.substring(8,12)}-4${hash.substring(13,16)}-a${hash.substring(17,20)}-${hash.substring(20,32)}`;
+}
 
 export class PaymentService {
   static generateSequentialReceiptNumber(schoolId: string): string {
@@ -27,7 +36,7 @@ export class PaymentService {
     const academicYearId = activeYear ? activeYear.id : (dbStore.academicYears[0]?.id || '7719d5c0-6a22-4945-a1a6-bec5972f5157');
 
     const receiptNumber = this.generateSequentialReceiptNumber(targetSchoolId);
-    const paymentId = `pay-${Date.now()}`;
+    const paymentId = crypto.randomUUID();
 
     const newPayment: PaymentItem = {
       id: paymentId,
@@ -51,7 +60,7 @@ export class PaymentService {
     if (sfIdx === -1) {
       // Create studentFee record if missing for this student
       const newSf = {
-        id: `sf-${Date.now()}`,
+        id: crypto.randomUUID(),
         schoolId: targetSchoolId,
         studentId: data.studentId,
         academicYearId: academicYearId,
@@ -76,29 +85,29 @@ export class PaymentService {
     // Save to local disk store immediately
     dbStore.saveToDisk();
 
-    // Persist to real Supabase PostgreSQL tables with required academic_year_id
+    // Persist to real Supabase PostgreSQL tables with required academic_year_id and valid UUIDs
     try {
       await supabaseAdmin.from('payments').insert([{
-        id: newPayment.id,
-        school_id: targetSchoolId,
-        student_id: data.studentId,
-        academic_year_id: academicYearId,
+        id: toUuid(newPayment.id),
+        school_id: toUuid(targetSchoolId),
+        student_id: toUuid(data.studentId),
+        academic_year_id: toUuid(academicYearId),
         receipt_number: receiptNumber,
         amount: data.amount,
         payment_method: data.paymentMethod,
         transaction_reference: data.transactionReference || '',
         payment_date: newPayment.paymentDate,
-        recorded_by: userId,
+        recorded_by: toUuid(userId),
         notes: data.notes || ''
       }]);
 
       if (sfIdx !== -1) {
         const sf = dbStore.studentFees[sfIdx];
         await supabaseAdmin.from('student_fees').upsert([{
-          id: sf.id,
-          school_id: targetSchoolId,
-          student_id: data.studentId,
-          academic_year_id: academicYearId,
+          id: toUuid(sf.id),
+          school_id: toUuid(targetSchoolId),
+          student_id: toUuid(data.studentId),
+          academic_year_id: toUuid(academicYearId),
           base_fee: sf.baseFee || 17200,
           final_fee: sf.finalFee || 17200,
           amount_paid: sf.amountPaid,
