@@ -26,18 +26,18 @@ You must:
   `;
 
   static async generateDashboardInsights(schoolId: string) {
-    // Gather aggregated stats safely
-    const totalStudents = dbStore.students.filter(s => s.schoolId === schoolId && s.status === 'active').length;
-    const totalTeachers = dbStore.staffProfiles.filter(sp => sp.school_id === schoolId && sp.status === 'active').length;
+    // Gather aggregated stats safely with dual camelCase and snake_case support
+    const totalStudents = dbStore.students.filter(s => (s.schoolId === schoolId || s.school_id === schoolId) && s.status === 'active').length;
+    const totalTeachers = dbStore.staffProfiles.filter(sp => (sp.school_id === schoolId || sp.schoolId === schoolId) && sp.status === 'active').length;
     
     const today = new Date().toISOString().split('T')[0];
-    const todayAttendance = dbStore.attendance.filter(a => a.schoolId === schoolId && a.attendanceDate === today);
+    const todayAttendance = dbStore.attendance.filter(a => (a.schoolId === schoolId || a.school_id === schoolId) && (a.attendanceDate === today || a.attendance_date === today));
     const presentCount = todayAttendance.filter(a => a.status === 'present' || a.status === 'late').length;
     const absentCount = todayAttendance.filter(a => a.status === 'absent').length;
 
-    const schoolFees = dbStore.studentFees.filter(sf => sf.schoolId === schoolId);
-    const totalDue = schoolFees.reduce((acc, f) => acc + f.balance, 0);
-    const totalCollected = dbStore.payments.filter(p => p.schoolId === schoolId).reduce((acc, p) => acc + p.amount, 0);
+    const schoolFees = dbStore.studentFees.filter(sf => sf.schoolId === schoolId || sf.school_id === schoolId);
+    const totalDue = schoolFees.reduce((acc, f) => acc + (Number(f.balance) || 0), 0);
+    const totalCollected = dbStore.payments.filter(p => p.schoolId === schoolId || p.school_id === schoolId).reduce((acc, p) => acc + (Number(p.amount) || 0), 0);
 
     const statsPayload = {
       totalStudents,
@@ -96,23 +96,23 @@ You must:
 
     // High-quality analytical fallback output if key is missing or offline
     return {
-      summary: `School operating smoothly with ${totalStudents} enrolled students and ${totalTeachers} active teaching staff members.`,
+      summary: `School operating smoothly with ${totalStudents} enrolled students and ${totalTeachers} active teaching faculty members. Total collected fee revenue stands at INR ${totalCollected.toLocaleString('en-IN')}.`,
       attendanceInsights: [
         {
-          observation: absentCount > 0 ? `${absentCount} students marked absent today.` : '100% daily attendance recorded across active sections.',
+          observation: absentCount > 0 ? `${absentCount} students marked absent today (${presentCount} present).` : (todayAttendance.length > 0 ? '100% daily attendance recorded across active sections.' : 'Daily attendance marking pending for today.'),
           severity: absentCount > 5 ? 'medium' : 'low',
-          recommendation: absentCount > 0 ? 'Trigger automated cutoff SMS notifications to parents.' : 'Maintain current attendance monitoring.'
+          recommendation: absentCount > 0 ? 'Trigger automated cutoff SMS notifications to absent students\' parents.' : 'Maintain current daily attendance tracking routines.'
         }
       ],
       feeInsights: [
         {
-          observation: `Outstanding school fee balance is INR ${totalDue.toLocaleString()}.`,
-          recommendation: 'Schedule automated SMS reminders for students with pending Term 1 dues.'
+          observation: totalDue > 0 ? `Outstanding school fee balance is INR ${totalDue.toLocaleString('en-IN')}.` : 'Zero outstanding fee arrears recorded across active student cohorts.',
+          recommendation: totalDue > 0 ? 'Schedule automated SMS fee reminders for students with pending Term dues.' : 'Fee recovery is in optimal status.'
         }
       ],
       actions: [
-        'Review class-wise attendance for Class 10 & Class 5',
-        'Dispatch fee reminder broadcast to parents with balances > INR 2,000',
+        'Review class-wise attendance records for all active grades',
+        'Dispatch fee reminder broadcast to parents with pending balances',
         'Verify upcoming academic schedule and holiday notifications'
       ]
     };

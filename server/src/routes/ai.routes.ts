@@ -15,18 +15,26 @@ router.get('/insights', requireAuth, async (req, res, next) => {
   }
 });
 
-// POST /api/ai/draft-sms
-router.post('/draft-sms', requireAuth, async (req, res, next) => {
+// POST /api/ai/draft-sms OR /api/ai/generate-sms
+router.post(['/draft-sms', '/generate-sms'], requireAuth, async (req, res, next) => {
   try {
-    const { category, targetAudience, details } = req.body;
-    const school = dbStore.schools.find(s => s.id === req.schoolId);
+    const { prompt, category, targetAudience, details } = req.body;
+    const school = dbStore.schools.find(s => s.id === req.schoolId || s.id === (req as any).school_id);
+    const content = prompt || details || 'Important announcement';
     const draft = await AiService.draftSms(
       school?.name || 'School OS',
-      category || 'custom',
+      category || 'Announcement',
       targetAudience || 'Parents',
-      details || 'Important announcement'
+      content
     );
-    res.json({ success: true, data: draft });
+    res.json({
+      success: true,
+      data: {
+        body: draft.message,
+        title: category || 'School Notice',
+        ...draft
+      }
+    });
   } catch (err) {
     next(err);
   }

@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/PageHeader';
 import { MobileNavCards } from '../../components/MobileNavCards';
+import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import api from '../../services/api';
 import { 
   GraduationCap, 
@@ -108,6 +109,7 @@ export const AdminDashboardPage: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    handleGenerateAiInsights();
   }, [selectedDate]);
 
   const handleGenerateAiInsights = async () => {
@@ -159,10 +161,15 @@ export const AdminDashboardPage: React.FC = () => {
       <div className="absolute bottom-0 -left-10 w-96 h-96 bg-purple-600/10 rounded-full blur-3xl pointer-events-none" />
 
       {/* MOBILE APP LAUNCHER (< 768px) */}
-      <div className="block md:hidden">
+      <div className="block md:hidden space-y-4">
         <PageHeader
           title="School OS"
           subtitle="Mobile Command Launcher"
+        />
+        <AiInsightsWidget
+          insights={aiInsights}
+          isLoading={isAiLoading}
+          onRefresh={handleGenerateAiInsights}
         />
         <MobileNavCards />
       </div>
@@ -480,16 +487,12 @@ export const AdminDashboardPage: React.FC = () => {
           </div>
         </div>
 
-        {/* 5. AI INSIGHTS CARD (IF GENERATED) */}
-        {aiInsights && (
-          <div className="bg-slate-900 text-white rounded-2xl p-4 shadow-xl border border-slate-800 space-y-2">
-            <div className="flex items-center gap-2 border-b border-slate-800 pb-2">
-              <Sparkles className="w-4 h-4 text-purple-400" />
-              <h3 className="font-extrabold text-xs text-slate-200">Gemini AI Executive Observations</h3>
-            </div>
-            <p className="text-xs text-slate-300 leading-relaxed font-medium">{aiInsights.summary}</p>
-          </div>
-        )}
+        {/* 5. AI EXECUTIVE INSIGHTS WIDGET */}
+        <AiInsightsWidget
+          insights={aiInsights}
+          isLoading={isAiLoading}
+          onRefresh={handleGenerateAiInsights}
+        />
 
         {/* 6. HIGH-CONTRAST QUICK ACTION COMMAND DOCK */}
         <div className="bg-slate-900 border border-slate-800 rounded-2xl p-4 shadow-xl flex items-center justify-between flex-wrap gap-3">

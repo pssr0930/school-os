@@ -1,5 +1,6 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/PageHeader';
+import { AiInsightsWidget } from '../../components/AiInsightsWidget';
 import api from '../../services/api';
 import { 
   GraduationCap, 
@@ -48,6 +49,7 @@ export const AdminAnalyticsPage: React.FC = () => {
 
   useEffect(() => {
     fetchDashboardData();
+    handleGenerateAiInsights();
   }, [selectedDate, selectedSection]);
 
   const handleGenerateAiInsights = async () => {
@@ -265,18 +267,12 @@ export const AdminAnalyticsPage: React.FC = () => {
         </div>
       </div>
 
-      {/* AI DASHBOARD INSIGHTS BOX */}
-      {aiInsights && (
-        <div className="bg-gradient-to-br from-purple-950 via-slate-900 to-indigo-950 text-white rounded-2xl p-4 sm:p-5 shadow-xl border border-purple-700/50 space-y-3">
-          <div className="flex items-center justify-between border-b border-purple-700/60 pb-2">
-            <div className="flex items-center gap-1.5">
-              <Sparkles className="w-4 h-4 text-purple-300" />
-              <h3 className="font-bold text-xs sm:text-sm text-purple-100">Gemini AI Executive Observations</h3>
-            </div>
-          </div>
-          <p className="text-xs text-purple-100 leading-relaxed font-medium">{aiInsights.summary}</p>
-        </div>
-      )}
+      {/* AI DASHBOARD INSIGHTS WIDGET */}
+      <AiInsightsWidget
+        insights={aiInsights}
+        isLoading={isAiLoading}
+        onRefresh={handleGenerateAiInsights}
+      />
 
       {/* ULTRA-COMPACT CLASS-WISE DAILY ATTENDANCE (< 768px) */}
       <div className="bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
