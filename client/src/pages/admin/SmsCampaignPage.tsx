@@ -624,7 +624,8 @@ export const SmsCampaignPage: React.FC = () => {
               </thead>
               <tbody className="divide-y divide-slate-100">
                 {smsLogs.slice(0, 30).map((log) => {
-                  const isSuccess = log.status === 'sent';
+                  const isMock = log.status === 'mock_sent' || (log.twilioMessageId && log.twilioMessageId.startsWith('MOCK-'));
+                  const isSuccess = log.status === 'sent' && !isMock;
                   const dateStr = log.createdAt || log.created_at || '';
                   const formattedDate = dateStr ? new Date(dateStr).toLocaleString('en-IN', {
                     day: '2-digit',
@@ -653,26 +654,31 @@ export const SmsCampaignPage: React.FC = () => {
                         {log.messageBody}
                       </td>
                       <td className="py-3 px-3 text-right whitespace-nowrap">
-                        <span
-                          className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
-                            isSuccess
-                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
-                              : 'bg-red-50 text-red-700 border-red-200'
-                          }`}
-                          title={log.errorMessage || ''}
-                        >
-                          {isSuccess ? (
-                            <>
-                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
-                              <span>Delivered</span>
-                            </>
-                          ) : (
-                            <>
-                              <XCircle className="w-3.5 h-3.5 text-red-600" />
-                              <span>Failed</span>
-                            </>
-                          )}
-                        </span>
+                        {isSuccess ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-emerald-50 text-emerald-700 border-emerald-200"
+                            title={`Twilio SID: ${log.twilioMessageId}`}
+                          >
+                            <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                            <span>Delivered</span>
+                          </span>
+                        ) : isMock ? (
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-amber-50 text-amber-700 border-amber-200"
+                            title="Mock / Simulator dispatch (Twilio credentials were not active when sent)"
+                          >
+                            <AlertCircle className="w-3.5 h-3.5 text-amber-600" />
+                            <span>Simulated</span>
+                          </span>
+                        ) : (
+                          <span
+                            className="inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border bg-red-50 text-red-700 border-red-200"
+                            title={log.errorMessage || 'Dispatch failed'}
+                          >
+                            <XCircle className="w-3.5 h-3.5 text-red-600" />
+                            <span>Failed</span>
+                          </span>
+                        )}
                       </td>
                     </tr>
                   );
