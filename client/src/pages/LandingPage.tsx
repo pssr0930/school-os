@@ -1,5 +1,5 @@
 import React, { useState, useEffect } from 'react';
-import { useNavigate, useParams } from 'react-router-dom';
+import { useNavigate, useParams, useLocation } from 'react-router-dom';
 import { 
   ShieldCheck, 
   UserCheck, 
@@ -19,7 +19,22 @@ import api from '../services/api';
 
 export const LandingPage: React.FC = () => {
   const navigate = useNavigate();
+  const location = useLocation();
   const { schoolCode: paramSchoolCode } = useParams<{ schoolCode?: string }>();
+
+  // Instant state recovery from navigation state or local cache
+  const cachedSchool = (location.state as any)?.school || (() => {
+    try {
+      const raw = localStorage.getItem('selected_school_data');
+      if (raw) {
+        const parsed = JSON.parse(raw);
+        if (!paramSchoolCode || (parsed.schoolCode || '').toUpperCase() === paramSchoolCode.toUpperCase()) {
+          return parsed;
+        }
+      }
+    } catch {}
+    return null;
+  })();
 
   const [schoolInfo, setSchoolInfo] = useState<{
     name: string;
@@ -30,15 +45,19 @@ export const LandingPage: React.FC = () => {
     city: string;
     phone: string;
     email: string;
-  }>({
-    name: 'Murthy High School',
-    schoolCode: 'MHS',
-    motto: 'Empowering Minds, Shaping Futures & Inspiring Leaders',
-    logoUrl: '/pssr-logo.png',
-    address: 'Sarpavaram police station road, near SRMT mall, Kakinada',
-    city: 'Kakinada',
-    phone: '9121454554',
-    email: 'pssr0930@gmail.com'
+  }>(() => {
+    const rawLogo = cachedSchool?.logoUrl || cachedSchool?.logo_url || '/pssr-logo.png';
+    const cleanLogo = rawLogo.includes('murthy-school-website.vercel.app') ? '/pssr-logo.png' : rawLogo;
+    return {
+      name: cachedSchool?.name || 'Murthy High School',
+      schoolCode: cachedSchool?.schoolCode || paramSchoolCode?.toUpperCase() || 'MHS',
+      motto: cachedSchool?.motto || 'Empowering Minds, Shaping Futures & Inspiring Leaders',
+      logoUrl: cleanLogo,
+      address: cachedSchool?.address || 'Sarpavaram police station road, near SRMT mall, Kakinada',
+      city: cachedSchool?.city || 'Kakinada',
+      phone: cachedSchool?.phone || '9121454554',
+      email: cachedSchool?.email || 'pssr0930@gmail.com'
+    };
   });
 
   const [language, setLanguage] = useState<'EN' | 'TE' | 'HI'>('EN');
@@ -47,14 +66,23 @@ export const LandingPage: React.FC = () => {
 
   useEffect(() => {
     const fetchPublicSchoolInfo = async () => {
+      // If we already have full cached school info matching this code, skip redundant network call
+      if (cachedSchool && cachedSchool.name && (!paramSchoolCode || (cachedSchool.schoolCode || '').toUpperCase() === paramSchoolCode.toUpperCase())) {
+        return;
+      }
+
       try {
         const activeCode = paramSchoolCode || localStorage.getItem('selected_school_code') || '';
         const url = activeCode ? `/schools/public-info?code=${encodeURIComponent(activeCode)}` : '/schools/public-info';
         const res = await api.get(url);
         if (res.data.success && res.data.school) {
+          const s = res.data.school;
+          const rawLogo = s.logoUrl || s.logo_url || '/pssr-logo.png';
+          const cleanLogo = rawLogo.includes('murthy-school-website.vercel.app') ? '/pssr-logo.png' : rawLogo;
           setSchoolInfo(prev => ({
             ...prev,
-            ...res.data.school
+            ...s,
+            logoUrl: cleanLogo
           }));
         }
       } catch (err) {
@@ -152,7 +180,12 @@ export const LandingPage: React.FC = () => {
                 alt={schoolInfo.name}
                 className="max-h-[38vh] max-w-full object-contain filter drop-shadow-[0_20px_30px_rgba(0,0,0,0.6)] transform group-hover:scale-105 transition-transform duration-500"
                 onError={(e) => {
-                  (e.target as HTMLElement).style.display = 'none';
+                  const target = e.target as HTMLImageElement;
+                  if (!target.src.endsWith('/pssr-logo.png')) {
+                    target.src = '/pssr-logo.png';
+                  } else {
+                    target.style.display = 'none';
+                  }
                 }}
               />
 

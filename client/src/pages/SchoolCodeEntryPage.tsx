@@ -61,17 +61,36 @@ export const SchoolCodeEntryPage: React.FC = () => {
       return;
     }
 
+    // High-speed Instant Path: If school is already in loaded public list or matches standard default
+    const localMatch = registeredSchools.find(s => (s.schoolCode || '').toUpperCase() === targetCode);
+    if (localMatch && (targetCode === 'MHS' || localMatch.id)) {
+      const fastSchoolData = {
+        id: localMatch.id || 'ec18034a-1640-4e97-a5c2-097a36152a8b',
+        name: localMatch.name || 'Murthy High School',
+        schoolCode: targetCode,
+        logoUrl: localMatch.logoUrl || '/pssr-logo.png',
+        city: localMatch.city || 'Kakinada',
+        motto: 'Empowering Minds, Shaping Futures & Inspiring Leaders'
+      };
+      localStorage.setItem('selected_school_code', targetCode);
+      localStorage.setItem('selected_school_id', fastSchoolData.id);
+      localStorage.setItem('selected_school_data', JSON.stringify(fastSchoolData));
+      navigate(`/school/${targetCode}`, { state: { school: fastSchoolData } });
+      return;
+    }
+
     setIsLoading(true);
 
     try {
       const res = await api.get(`/schools/lookup/${targetCode}`);
       if (res.data.success && res.data.school) {
-        // Store selected school code for session persistence
+        // Store selected school data for instant zero-latency entrance portal rendering
         localStorage.setItem('selected_school_code', targetCode);
         localStorage.setItem('selected_school_id', res.data.school.id);
+        localStorage.setItem('selected_school_data', JSON.stringify(res.data.school));
         
-        // Navigate directly to the school's tailored digital entrance portal
-        navigate(`/school/${targetCode}`);
+        // Navigate directly to the school's tailored digital entrance portal with preloaded state
+        navigate(`/school/${targetCode}`, { state: { school: res.data.school } });
       }
     } catch (err: any) {
       const serverMsg = err.response?.data?.message;

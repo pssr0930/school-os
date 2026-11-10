@@ -29,6 +29,46 @@ router.post('/templates', requireAuth, requirePermission('sms.manage_templates')
   res.status(201).json({ success: true, message: 'SMS template created', data: newTmpl });
 });
 
+// POST /api/sms/send (Single / Direct SMS dispatch)
+router.post('/send', requireAuth, requirePermission('sms.send'), async (req, res, next) => {
+  try {
+    const { recipient, phone, message, studentName, recipientName, studentId, category } = req.body;
+    const targetPhone = recipient || phone;
+    const targetName = recipientName || studentName || 'Recipient';
+    const targetCategory = category || 'general';
+
+    if (!targetPhone || !message) {
+      return res.status(400).json({ success: false, message: 'Recipient phone number and message are required' });
+    }
+
+    const logRecord = await SmsService.sendSms(
+      req.schoolId!,
+      targetPhone,
+      targetName,
+      studentId || null,
+      message,
+      targetCategory,
+      req.user!.userId
+    );
+
+    if (logRecord.status === 'failed') {
+      return res.status(400).json({
+        success: false,
+        message: logRecord.errorMessage || 'SMS dispatch failed via Twilio',
+        data: logRecord
+      });
+    }
+
+    res.json({
+      success: true,
+      message: 'SMS sent successfully',
+      data: logRecord
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // POST /api/sms/campaign OR /api/sms/campaigns
 router.post(['/campaign', '/campaigns'], requireAuth, requirePermission('sms.send'), validateBody(sendSmsCampaignSchema), async (req, res, next) => {
   try {

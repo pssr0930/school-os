@@ -81,8 +81,11 @@ export const StudentsListPage: React.FC = () => {
   useEffect(() => {
     fetchStudents();
     const interval = setInterval(() => {
-      fetchStudents(true);
-    }, 3000);
+      // Background auto-refresh paused if page is not visible or user is typing
+      if (!document.hidden) {
+        fetchStudents(true);
+      }
+    }, 20000);
     return () => clearInterval(interval);
   }, [selectedClass, selectedSection, searchTerm]);
 

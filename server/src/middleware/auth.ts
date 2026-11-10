@@ -28,7 +28,7 @@ export const requireAuth = (req: AuthRequest, res: Response, next: NextFunction)
         // Fallback default admin/staff membership if dev bypass
         member = dbStore.schoolMembers[dbStore.schoolMembers.length - 1] || dbStore.schoolMembers[0];
         profile = profile || dbStore.profiles.find(p => p.id === member?.user_id) || dbStore.profiles[0];
-        schoolId = member?.school_id || dbStore.schools[0]?.id || 'sch-1786045901898';
+        schoolId = member?.school_id || dbStore.schools[0]?.id || 'ec18034a-1640-4e97-a5c2-097a36152a8b';
       }
     }
 

@@ -3,19 +3,22 @@ import { env } from '../config/env';
 import { dbStore } from '../config/supabase';
 import crypto from 'crypto';
 
-let twilioClient: twilio.Twilio | null = null;
+function getTwilioClient(): twilio.Twilio | null {
+  const sid = (env.TWILIO_ACCOUNT_SID && !env.TWILIO_ACCOUNT_SID.includes('your-')) 
+    ? env.TWILIO_ACCOUNT_SID 
+    : (process.env.TWILIO_ACCOUNT_SID || '');
+  const token = (env.TWILIO_AUTH_TOKEN && !env.TWILIO_AUTH_TOKEN.includes('your-')) 
+    ? env.TWILIO_AUTH_TOKEN 
+    : (process.env.TWILIO_AUTH_TOKEN || '');
 
-const isRealTwilio = env.TWILIO_ACCOUNT_SID && 
-                     !env.TWILIO_ACCOUNT_SID.includes('your-') && 
-                     env.TWILIO_AUTH_TOKEN && 
-                     !env.TWILIO_AUTH_TOKEN.includes('your-');
-
-if (isRealTwilio) {
-  try {
-    twilioClient = twilio(env.TWILIO_ACCOUNT_SID, env.TWILIO_AUTH_TOKEN);
-  } catch (err) {
-    console.warn('[Twilio] Credentials unconfigured or invalid, falling back to safe local log delivery mode.');
+  if (sid && token) {
+    try {
+      return twilio(sid, token);
+    } catch (err: any) {
+      console.warn('[Twilio Init Warning]', err.message || err);
+    }
   }
+  return null;
 }
 
 export const DEFAULT_SMS_PRESETS = [
@@ -81,6 +84,18 @@ export const DEFAULT_SMS_PRESETS = [
   }
 ];
 
+// International E.164 phone normalizer (defaults to Indian +91 prefix)
+export function normalizePhoneNumber(rawPhone: string, defaultCountry = '+91'): string {
+  if (!rawPhone) return '';
+  const cleaned = rawPhone.trim().replace(/[\s\-\(\)\.]/g, '');
+  if (!cleaned) return '';
+  if (cleaned.startsWith('+')) return cleaned;
+  if (cleaned.startsWith('0')) return `${defaultCountry}${cleaned.slice(1)}`;
+  if (cleaned.length === 10) return `${defaultCountry}${cleaned}`;
+  if (cleaned.length === 12 && cleaned.startsWith('91')) return `+${cleaned}`;
+  return `${defaultCountry}${cleaned}`;
+}
+
 export class SmsService {
   static getTemplates(schoolId: string) {
     const schoolTemplates = dbStore.smsTemplates.filter(t => t.schoolId === schoolId || t.school_id === schoolId);
@@ -98,55 +113,74 @@ export class SmsService {
     const sec = dbStore.sections.find(s => s.id === student.sectionId || s.id === student.section_id);
 
     const classNameStr = `${cls ? cls.name : ''}${sec ? ' - ' + sec.name : ''}`.trim() || 'Class';
-    const dueAmountStr = feeSummary ? (feeSummary.balance || 0).toLocaleString() : '0';
+    const dueAmountStr = feeSummary ? (feeSummary.balance || 0).toLocaleString('en-IN') : '0';
     const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
+    const parentName = parent?.fatherName || parent?.motherName || parent?.guardianName || 'Parent';
 
     return template
-      .replace(/\{student_name\}/g, student.fullName || 'Student')
-      .replace(/\{class_name\}/g, classNameStr)
-      .replace(/\{due_amount\}/g, dueAmountStr)
-      .replace(/\{school_name\}/g, schoolName)
-      .replace(/\{date\}/g, todayStr)
-      .replace(/\{time\}/g, '10:15 AM')
-      .replace(/\{due_date\}/g, '15th August')
-      .replace(/\{holiday_reason\}/g, 'Independence Day')
-      .replace(/\{resume_date\}/g, 'Monday, 18th August')
-      .replace(/\{ptm_date\}/g, 'Saturday, 15th August')
-      .replace(/\{ptm_time\}/g, '9:00 AM to 1:00 PM')
-      .replace(/\{exam_name\}/g, 'Mid-Term Examinations')
-      .replace(/\{start_date\}/g, '18th August 2026')
-      .replace(/\{event_date\}/g, '15th August 2026')
-      .replace(/\{trip_date\}/g, '22nd August 2026');
+      .replace(/\{student_name\}/gi, student.fullName || student.full_name || 'Student')
+      .replace(/\{parent_name\}/gi, parentName)
+      .replace(/\{father_name\}/gi, parent?.fatherName || parentName)
+      .replace(/\{class_name\}/gi, classNameStr)
+      .replace(/\{due_amount\}/gi, dueAmountStr)
+      .replace(/\{amount\}/gi, dueAmountStr)
+      .replace(/\{school_name\}/gi, schoolName)
+      .replace(/\{date\}/gi, todayStr)
+      .replace(/\{time\}/gi, '10:15 AM')
+      .replace(/\{due_date\}/gi, '15th of this month')
+      .replace(/\{holiday_reason\}/gi, 'Public Holiday')
+      .replace(/\{resume_date\}/gi, 'Next Working Day')
+      .replace(/\{ptm_date\}/gi, 'Upcoming Saturday')
+      .replace(/\{ptm_time\}/gi, '9:00 AM to 1:00 PM')
+      .replace(/\{exam_name\}/gi, 'Term Examinations')
+      .replace(/\{start_date\}/gi, 'Next Monday')
+      .replace(/\{event_date\}/gi, 'Annual Day')
+      .replace(/\{trip_date\}/gi, 'Upcoming Excursion');
   }
 
-  static async sendSms(schoolId: string, phone: string, recipientName: string, studentId: string | null, messageBody: string, category: string, userId?: string) {
+  static async sendSms(
+    schoolId: string,
+    phone: string,
+    recipientName: string,
+    studentId: string | null,
+    messageBody: string,
+    category: string,
+    userId?: string,
+    skipSaveToDisk = false
+  ) {
+    const formattedPhone = normalizePhoneNumber(phone);
     let twilioMsgId = `MOCK-MSG-${Date.now()}`;
     let status = 'sent';
     let errorMessage = '';
 
-    if (twilioClient && env.TWILIO_PHONE_NUMBER && !env.TWILIO_PHONE_NUMBER.includes('1234567890')) {
+    const client = getTwilioClient();
+    const fromPhone = (env.TWILIO_PHONE_NUMBER && !env.TWILIO_PHONE_NUMBER.includes('1234567890'))
+      ? env.TWILIO_PHONE_NUMBER
+      : (process.env.TWILIO_PHONE_NUMBER || '+14472841082');
+
+    if (client && fromPhone && !fromPhone.includes('1234567890')) {
       try {
-        const response = await twilioClient.messages.create({
+        const response = await client.messages.create({
           body: messageBody,
-          from: env.TWILIO_PHONE_NUMBER,
-          to: phone
+          from: fromPhone,
+          to: formattedPhone
         });
         twilioMsgId = response.sid;
         status = 'sent';
       } catch (err: any) {
-        console.error('[Twilio Error]', err);
+        console.error('[Twilio Dispatch Error]', err.message || err);
         status = 'failed';
         errorMessage = err.message || 'SMS dispatch failed';
       }
     } else {
-      console.log(`[SMS DISPATCH] To: ${phone} (${recipientName}) | Body: "${messageBody}"`);
+      console.log(`[SMS DISPATCH (DEV/MOCK MODE)] To: ${formattedPhone} (${recipientName}) | Body: "${messageBody}"`);
       status = 'sent';
     }
 
     const logRecord = {
       id: crypto.randomUUID(),
       schoolId,
-      recipientPhone: phone,
+      recipientPhone: formattedPhone || phone,
       recipientName,
       studentId,
       messageBody,
@@ -159,11 +193,22 @@ export class SmsService {
     };
 
     dbStore.smsLogs.push(logRecord);
-    dbStore.saveToDisk();
+    if (!skipSaveToDisk) {
+      dbStore.saveToDisk();
+    }
     return logRecord;
   }
 
-  static async sendCampaign(schoolId: string, userId: string, title: string, messageTemplate: string, targetType: string, classId?: string, sectionId?: string, customPhones?: string[]) {
+  static async sendCampaign(
+    schoolId: string,
+    userId: string,
+    title: string,
+    messageTemplate: string,
+    targetType: string,
+    classId?: string,
+    sectionId?: string,
+    customPhones?: string[]
+  ) {
     const campaignId = crypto.randomUUID();
     
     dbStore.smsCampaigns.push({
@@ -179,43 +224,101 @@ export class SmsService {
     let targetStudents: any[] = [];
 
     if (targetType === 'all') {
-      targetStudents = dbStore.students.filter(s => (s.schoolId === schoolId || s.school_id === schoolId) && s.status === 'active');
-    } else if (targetType === 'class_wise' && classId) {
-      targetStudents = dbStore.students.filter(s => (s.schoolId === schoolId || s.school_id === schoolId) && (s.classId === classId || s.class_id === classId) && s.status === 'active');
-      if (sectionId) targetStudents = targetStudents.filter(s => s.sectionId === sectionId || s.section_id === sectionId);
+      targetStudents = dbStore.students.filter(s => 
+        (s.schoolId === schoolId || s.school_id === schoolId || !schoolId) && 
+        (s.status === 'active' || !s.status)
+      );
+      if (targetStudents.length === 0 && dbStore.students.length > 0) {
+        targetStudents = dbStore.students.filter(s => s.status !== 'archived');
+      }
+    } else if (targetType === 'class_wise' || targetType === 'section_wise') {
+      targetStudents = dbStore.students.filter(s => 
+        (s.schoolId === schoolId || s.school_id === schoolId || !schoolId) && 
+        (s.status === 'active' || !s.status)
+      );
+      if (targetStudents.length === 0 && dbStore.students.length > 0) {
+        targetStudents = dbStore.students.filter(s => s.status !== 'archived');
+      }
+      if (classId) {
+        targetStudents = targetStudents.filter(s => s.classId === classId || s.class_id === classId);
+      }
+      if (sectionId) {
+        targetStudents = targetStudents.filter(s => s.sectionId === sectionId || s.section_id === sectionId);
+      }
     }
 
     let successCount = 0;
+    let failedCount = 0;
 
-    if (targetType === 'custom_phones' && customPhones) {
+    if (targetType === 'custom_phones' && customPhones && customPhones.length > 0) {
       const school = dbStore.schools.find(s => s.id === schoolId);
       const schoolName = school?.name || 'School Office';
       const todayStr = new Date().toLocaleDateString('en-IN', { day: '2-digit', month: '2-digit', year: 'numeric' });
 
       const genericMsg = messageTemplate
-        .replace(/\{school_name\}/g, schoolName)
-        .replace(/\{date\}/g, todayStr);
+        .replace(/\{school_name\}/gi, schoolName)
+        .replace(/\{date\}/gi, todayStr);
 
-      for (let i = 0; i < customPhones.length; i++) {
-        const phone = customPhones[i];
-        const log = await this.sendSms(schoolId, phone, `Recipient #${i + 1}`, null, genericMsg, 'campaign', userId);
-        if (log.status === 'sent') successCount++;
+      const batchSize = 5;
+      for (let i = 0; i < customPhones.length; i += batchSize) {
+        const batch = customPhones.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (rawPhone, idx) => {
+          if (!rawPhone || !rawPhone.trim()) return;
+          const log = await this.sendSms(schoolId, rawPhone.trim(), `Recipient #${i + idx + 1}`, null, genericMsg, 'campaign', userId, true);
+          if (log.status === 'sent') successCount++;
+          else failedCount++;
+        }));
       }
     } else {
-      // Dynamic Student-Specific Personalization for every student individually
-      for (const st of targetStudents) {
-        const parent = dbStore.studentParents.find(p => p.studentId === st.id || p.student_id === st.id);
-        const phone = parent?.fatherPhone || parent?.motherPhone || parent?.guardianPhone || parent?.emergencyContactPhone;
+      // Dynamic Student-Specific Personalization for every student individually (batched concurrent execution)
+      const batchSize = 5;
+      for (let i = 0; i < targetStudents.length; i += batchSize) {
+        const batch = targetStudents.slice(i, i + batchSize);
+        await Promise.all(batch.map(async (st) => {
+          const parent = dbStore.studentParents.find(p => 
+            p.studentId === st.id || 
+            p.student_id === st.id ||
+            p.studentId === (st as any).student_id ||
+            p.student_id === (st as any).studentId
+          );
+          const rawPhone = 
+            parent?.fatherPhone || 
+            parent?.father_phone ||
+            parent?.motherPhone || 
+            parent?.mother_phone ||
+            parent?.guardianPhone || 
+            parent?.guardian_phone ||
+            parent?.emergencyContactPhone || 
+            parent?.emergency_contact_phone ||
+            parent?.phone ||
+            (st as any).fatherPhone ||
+            (st as any).father_phone ||
+            (st as any).motherPhone ||
+            (st as any).mother_phone ||
+            (st as any).phone ||
+            (st as any).parentPhone;
 
-        if (phone) {
-          const personalizedBody = this.personalizeMessageForStudent(messageTemplate, st, schoolId);
-          const log = await this.sendSms(schoolId, phone, st.fullName, st.id, personalizedBody, 'campaign', userId);
-          if (log.status === 'sent') successCount++;
-        }
+          if (rawPhone) {
+            const personalizedBody = this.personalizeMessageForStudent(messageTemplate, st, schoolId);
+            const log = await this.sendSms(schoolId, rawPhone, st.fullName || st.full_name || 'Student Parent', st.id, personalizedBody, 'campaign', userId, true);
+            if (log.status === 'sent') successCount++;
+            else failedCount++;
+          } else {
+            console.warn(`[SMS Campaign Warning] Student "${st.fullName || st.full_name}" has no registered parent phone number.`);
+            failedCount++;
+          }
+        }));
       }
     }
 
+    // Persist all campaign and SMS logs to disk once at the end
     dbStore.saveToDisk();
-    return { campaignId, total: targetType === 'custom_phones' ? (customPhones?.length || 0) : targetStudents.length, successCount };
+
+    return {
+      campaignId,
+      total: targetType === 'custom_phones' ? (customPhones?.length || 0) : targetStudents.length,
+      successCount,
+      failedCount
+    };
   }
 }

@@ -198,7 +198,7 @@ export class AuthService {
     }
 
     let school = dbStore.schools[dbStore.schools.length - 1] || dbStore.schools[0] || {
-      id: 'sch-1786045901898',
+      id: 'ec18034a-1640-4e97-a5c2-097a36152a8b',
       name: 'Murthy High School'
     };
 

@@ -1,8 +1,11 @@
 import { dbStore, supabaseAdmin } from '../config/supabase';
+import { env } from '../config/env';
 import { StudentItem } from '../types';
 import crypto from 'crypto';
 
 export class StudentService {
+  private static checkedSchools = new Set<string>();
+
   static generateSequentialRegNumber(schoolId: string): string {
     const school = dbStore.schools.find(s => s.id === schoolId);
     const prefix = school?.registrationPrefix || 'REG';
@@ -146,20 +149,22 @@ export class StudentService {
 
     let list = dbStore.students.filter(s => s.schoolId === schoolId || s.school_id === schoolId);
 
-    // If local memory list is empty for this specific school, fetch real records from Supabase PostgreSQL scoped by school_id
-    if (list.length === 0) {
+    // One-time hydration check per school (only if real credentials configured, strictly cached in memory afterwards)
+    if (list.length === 0 && !this.checkedSchools.has(schoolId) && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY && !env.SUPABASE_SERVICE_ROLE_KEY.includes('placeholder')) {
+      this.checkedSchools.add(schoolId);
       try {
-        const { data: cloudStudents, error } = await supabaseAdmin
+        const timeoutPromise = new Promise<{ data: any[] | null; error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error('Supabase fetch timeout')), 2000)
+        );
+        const fetchPromise = supabaseAdmin
           .from('students')
           .select('*')
           .eq('school_id', schoolId);
 
-        if (error) {
-          console.warn('[Supabase Fetch Error]', error.message || error);
-        }
-          
+        const { data: cloudStudents } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
         if (cloudStudents && cloudStudents.length > 0) {
-          cloudStudents.forEach(st => {
+          cloudStudents.forEach((st: any) => {
             const mapped: StudentItem = {
               id: st.id,
               schoolId: st.school_id || schoolId,
@@ -185,12 +190,13 @@ export class StudentService {
               dbStore.students.push(mapped);
             }
           });
-          dbStore.saveToDisk();
           list = dbStore.students.filter(s => s.schoolId === schoolId || s.school_id === schoolId);
         }
       } catch (err: any) {
-        console.warn('[Supabase Student Fetch Error]', err.message || err);
+        // Silently continue with instant in-memory list
       }
+    } else {
+      this.checkedSchools.add(schoolId);
     }
 
     if (filters.status) {
@@ -245,36 +251,6 @@ export class StudentService {
     }
 
     if (!student) return null;
-
-    // Hydrate payments if local memory cache is empty
-    if (dbStore.payments.length === 0) {
-      try {
-        const { data: cloudPayments } = await supabaseAdmin.from('payments').select('*');
-        if (cloudPayments && cloudPayments.length > 0) {
-          cloudPayments.forEach(cp => {
-            if (!dbStore.payments.some(p => p.id === cp.id)) {
-              dbStore.payments.push({
-                id: cp.id,
-                schoolId: cp.school_id,
-                studentId: cp.student_id,
-                academicYearId: cp.academic_year_id,
-                receiptNumber: cp.receipt_number,
-                amount: cp.amount,
-                paymentMethod: cp.payment_method,
-                transactionReference: cp.transaction_reference,
-                paymentDate: cp.payment_date,
-                recordedBy: cp.recorded_by,
-                notes: cp.notes,
-                createdAt: cp.created_at || new Date().toISOString()
-              });
-            }
-          });
-          dbStore.saveToDisk();
-        }
-      } catch (err) {
-        console.warn('[Supabase Payments Lookup Warning]', err);
-      }
-    }
 
     const cls = dbStore.classes.find(c => c.id === student?.classId || c.id === student?.class_id);
     const sec = dbStore.sections.find(s => s.id === student?.sectionId || s.id === student?.section_id);

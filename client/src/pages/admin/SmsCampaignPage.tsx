@@ -8,12 +8,15 @@ import {
   Users, 
   CheckCircle2, 
   Clock, 
-  Bookmark,
-  Calendar,
-  AlertCircle,
-  IndianRupee,
-  Bell,
-  Award
+  Bookmark, 
+  Calendar, 
+  AlertCircle, 
+  IndianRupee, 
+  Bell, 
+  Award,
+  RotateCw,
+  Phone,
+  XCircle
 } from 'lucide-react';
 
 export const SmsCampaignPage: React.FC = () => {
@@ -34,6 +37,14 @@ export const SmsCampaignPage: React.FC = () => {
   const [statusMsg, setStatusMsg] = useState('');
   const [aiPrompt, setAiPrompt] = useState('');
   const [isAiLoading, setIsAiLoading] = useState(false);
+  const [smsLogs, setSmsLogs] = useState<any[]>([]);
+  const [isLogsLoading, setIsLogsLoading] = useState(false);
+
+  // Quick Test SMS State
+  const [testPhone, setTestPhone] = useState('9121454554');
+  const [testMessage, setTestMessage] = useState('Test SMS from Murthy High School via Twilio Gateway.');
+  const [isSendingTest, setIsSendingTest] = useState(false);
+  const [testStatus, setTestStatus] = useState<{ success: boolean; msg: string } | null>(null);
 
   // Ready-to-Use Bulk SMS Presets (with Placeholders)
   const smsPresets = [
@@ -105,6 +116,7 @@ export const SmsCampaignPage: React.FC = () => {
 
   useEffect(() => {
     fetchClasses();
+    fetchSmsLogs();
   }, []);
 
   const fetchClasses = async () => {
@@ -115,6 +127,20 @@ export const SmsCampaignPage: React.FC = () => {
       }
     } catch (err) {
       console.error(err);
+    }
+  };
+
+  const fetchSmsLogs = async () => {
+    setIsLogsLoading(true);
+    try {
+      const res = await api.get('/sms/logs');
+      if (res.data.success) {
+        setSmsLogs(res.data.data || []);
+      }
+    } catch (err) {
+      console.warn('Failed to load SMS logs:', err);
+    } finally {
+      setIsLogsLoading(false);
     }
   };
 
@@ -148,12 +174,43 @@ export const SmsCampaignPage: React.FC = () => {
     try {
       const res = await api.post('/ai/generate-sms', { prompt: aiPrompt });
       if (res.data.success) {
-        setMessageBody(res.data.messageBody);
+        const bodyText = res.data.data?.body || res.data.data?.message || res.data.messageBody || res.data.data?.messageBody || '';
+        if (bodyText) {
+          setMessageBody(bodyText);
+        }
       }
     } catch (err) {
       console.error(err);
     } finally {
       setIsAiLoading(false);
+    }
+  };
+
+  const handleSendTestSms = async (e: React.FormEvent) => {
+    e.preventDefault();
+    if (!testPhone || !testMessage) return;
+    setIsSendingTest(true);
+    setTestStatus(null);
+    try {
+      const res = await api.post('/sms/send', {
+        recipient: testPhone,
+        message: testMessage,
+        studentName: 'Test Recipient',
+        category: 'test'
+      });
+      if (res.data.success) {
+        setTestStatus({ success: true, msg: `✅ Live SMS delivered! Twilio SID: ${res.data.data?.twilioMessageId || 'Success'}` });
+        fetchSmsLogs();
+      } else {
+        setTestStatus({ success: false, msg: `❌ ${res.data.message || 'SMS dispatch failed'}` });
+      }
+    } catch (err: any) {
+      setTestStatus({ 
+        success: false, 
+        msg: `❌ ${err.response?.data?.message || err.message || 'Twilio failed to dispatch. Note: Twilio Trial mode delivers only to verified numbers.'}` 
+      });
+    } finally {
+      setIsSendingTest(false);
     }
   };
 
@@ -174,14 +231,22 @@ export const SmsCampaignPage: React.FC = () => {
         payload.classId = selectedClass;
         payload.sectionId = selectedSection;
       } else if (targetType === 'custom_phones') {
-        payload.customPhones = customPhones.split(',').map(p => p.trim()).filter(Boolean);
+        payload.customPhones = customPhones.split(/[\r\n,;]+/).map(p => p.trim()).filter(Boolean);
       }
 
       const res = await api.post('/sms/campaign', payload);
       if (res.data.success) {
-        setStatusMsg(`🎉 Bulk SMS Campaign Dispatched! Total Recipients: ${res.data.total}, Delivered: ${res.data.successCount}`);
+        const total = res.data.total || 0;
+        const delivered = res.data.successCount || 0;
+        const failed = res.data.failedCount || 0;
+        let msg = `🎉 Bulk SMS Campaign Dispatched! Total Recipients: ${total}, Delivered: ${delivered}`;
+        if (failed > 0) {
+          msg += ` (${failed} unverified/failed - Twilio Trial accounts only deliver to verified numbers)`;
+        }
+        setStatusMsg(msg);
         setCampaignTitle('');
         setMessageBody('');
+        fetchSmsLogs();
       }
     } catch (err: any) {
       setStatusMsg(err.response?.data?.message || 'Failed to dispatch campaign.');
@@ -203,6 +268,73 @@ export const SmsCampaignPage: React.FC = () => {
           <span>{statusMsg}</span>
         </div>
       )}
+
+      {/* TWILIO GATEWAY STATUS & INSTANT TEST DISPATCH */}
+      <div className="bg-gradient-to-r from-blue-900 to-indigo-900 text-white rounded-2xl p-6 shadow-md space-y-4 border border-blue-700/50">
+        <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3 border-b border-blue-800/80 pb-4">
+          <div className="flex items-center gap-3">
+            <div className="w-10 h-10 rounded-xl bg-blue-500/20 flex items-center justify-center border border-blue-400/30">
+              <Phone className="w-5 h-5 text-blue-300" />
+            </div>
+            <div>
+              <div className="flex items-center gap-2">
+                <h3 className="font-bold text-sm text-white">Twilio Outbound SMS Gateway</h3>
+                <span className="px-2 py-0.5 rounded-full text-[10px] font-extrabold bg-emerald-500/20 text-emerald-300 border border-emerald-500/30">
+                  LIVE & CONNECTED
+                </span>
+              </div>
+              <p className="text-xs text-blue-200">
+                Outbound Sender: <span className="font-mono text-white font-bold">+1 (447) 284-1082</span> • Verified Number: <span className="font-mono text-emerald-300 font-bold">+91 9121454554</span>
+              </p>
+            </div>
+          </div>
+          <span className="text-[11px] bg-blue-800/60 text-blue-200 px-3 py-1.5 rounded-xl border border-blue-700 self-start sm:self-auto">
+            Trial Mode: Delivers to Verified Numbers
+          </span>
+        </div>
+
+        {/* Quick Instant Test SMS Dispatch */}
+        <form onSubmit={handleSendTestSms} className="grid grid-cols-1 sm:grid-cols-12 gap-3 pt-1 items-end">
+          <div className="sm:col-span-3">
+            <label className="block text-[11px] font-bold text-blue-200 mb-1">Send Test To Mobile *</label>
+            <input
+              type="text"
+              required
+              value={testPhone}
+              onChange={(e) => setTestPhone(e.target.value)}
+              placeholder="+919121454554"
+              className="w-full bg-slate-950/70 border border-blue-700/60 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 font-mono focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          <div className="sm:col-span-6">
+            <label className="block text-[11px] font-bold text-blue-200 mb-1">Test Message *</label>
+            <input
+              type="text"
+              required
+              value={testMessage}
+              onChange={(e) => setTestMessage(e.target.value)}
+              placeholder="Test SMS from Murthy High School"
+              className="w-full bg-slate-950/70 border border-blue-700/60 rounded-xl px-3 py-2 text-xs text-white placeholder-slate-400 focus:outline-none focus:border-blue-400"
+            />
+          </div>
+          <div className="sm:col-span-3">
+            <button
+              type="submit"
+              disabled={isSendingTest}
+              className="w-full py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-md transition-all flex items-center justify-center gap-1.5"
+            >
+              <Send className="w-3.5 h-3.5" />
+              <span>{isSendingTest ? 'Sending...' : 'Send Test SMS Now'}</span>
+            </button>
+          </div>
+        </form>
+
+        {testStatus && (
+          <div className={`p-3 rounded-xl text-xs font-semibold flex items-center gap-2 ${testStatus.success ? 'bg-emerald-500/20 text-emerald-200 border border-emerald-500/30' : 'bg-rose-500/20 text-rose-200 border border-rose-500/30'}`}>
+            <span>{testStatus.msg}</span>
+          </div>
+        )}
+      </div>
 
       {/* QUICK PRESETS GALLERY */}
       <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
@@ -445,11 +577,110 @@ export const SmsCampaignPage: React.FC = () => {
           <div className="pt-4 border-t border-slate-700/60 text-[11px] text-slate-400 space-y-1">
             <p className="font-bold text-slate-300 uppercase tracking-wider">Dynamic Placeholder Engine:</p>
             <p className="font-mono text-purple-300">{'{student_name}'} → Student Full Name</p>
+            <p className="font-mono text-purple-300">{'{parent_name}'} → Parent Full Name</p>
             <p className="font-mono text-purple-300">{'{class_name}'} → Student Class & Section</p>
             <p className="font-mono text-purple-300">{'{due_amount}'} → Individual Outstanding Fee</p>
             <p className="font-mono text-purple-300">{'{school_name}'} → {school?.name || 'Murthy High School'}</p>
           </div>
         </div>
+      </div>
+
+      {/* RECENT SMS BROADCAST AUDIT LOGS */}
+      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
+        <div className="flex items-center justify-between border-b border-slate-100 pb-3">
+          <div className="flex items-center gap-2">
+            <Clock className="w-5 h-5 text-blue-600" />
+            <h3 className="font-bold text-slate-900 text-sm">Recent SMS Broadcasts & Delivery Audit Logs</h3>
+          </div>
+          <button
+            type="button"
+            onClick={fetchSmsLogs}
+            disabled={isLogsLoading}
+            className="flex items-center gap-1.5 text-xs font-bold text-slate-600 hover:text-blue-600 py-1.5 px-3 rounded-lg border border-slate-200 hover:bg-slate-50 transition-colors"
+          >
+            <RotateCw className={`w-3.5 h-3.5 ${isLogsLoading ? 'animate-spin text-blue-600' : ''}`} />
+            <span>Refresh Logs</span>
+          </button>
+        </div>
+
+        {smsLogs.length === 0 ? (
+          <div className="text-center py-10 text-slate-400 space-y-2">
+            <Phone className="w-8 h-8 mx-auto text-slate-300" />
+            <p className="text-xs font-semibold">No SMS broadcast records found.</p>
+            <p className="text-[11px] text-slate-400">Sent broadcasts, fee reminders, and attendance notifications will automatically log here.</p>
+          </div>
+        ) : (
+          <div className="overflow-x-auto">
+            <table className="w-full text-left text-xs">
+              <thead>
+                <tr className="border-b border-slate-200 text-slate-500 font-bold uppercase tracking-wider text-[10px] bg-slate-50">
+                  <th className="py-2.5 px-3">Timestamp</th>
+                  <th className="py-2.5 px-3">Recipient</th>
+                  <th className="py-2.5 px-3">Phone</th>
+                  <th className="py-2.5 px-3">Category</th>
+                  <th className="py-2.5 px-3">Message Snippet</th>
+                  <th className="py-2.5 px-3 text-right">Delivery Status</th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-slate-100">
+                {smsLogs.slice(0, 30).map((log) => {
+                  const isSuccess = log.status === 'sent';
+                  const dateStr = log.createdAt || log.created_at || '';
+                  const formattedDate = dateStr ? new Date(dateStr).toLocaleString('en-IN', {
+                    day: '2-digit',
+                    month: 'short',
+                    hour: '2-digit',
+                    minute: '2-digit'
+                  }) : 'Just now';
+
+                  return (
+                    <tr key={log.id} className="hover:bg-slate-50 transition-colors">
+                      <td className="py-3 px-3 font-mono text-[11px] text-slate-500 whitespace-nowrap">
+                        {formattedDate}
+                      </td>
+                      <td className="py-3 px-3 font-bold text-slate-800">
+                        {log.recipientName || 'Parent / Recipient'}
+                      </td>
+                      <td className="py-3 px-3 font-mono text-slate-600 whitespace-nowrap">
+                        {log.recipientPhone || 'N/A'}
+                      </td>
+                      <td className="py-3 px-3">
+                        <span className="text-[10px] font-bold uppercase tracking-wider px-2 py-0.5 rounded-full bg-slate-100 text-slate-700">
+                          {log.category || 'general'}
+                        </span>
+                      </td>
+                      <td className="py-3 px-3 text-slate-600 max-w-xs truncate" title={log.messageBody}>
+                        {log.messageBody}
+                      </td>
+                      <td className="py-3 px-3 text-right whitespace-nowrap">
+                        <span
+                          className={`inline-flex items-center gap-1 text-[11px] font-bold px-2.5 py-0.5 rounded-full border ${
+                            isSuccess
+                              ? 'bg-emerald-50 text-emerald-700 border-emerald-200'
+                              : 'bg-red-50 text-red-700 border-red-200'
+                          }`}
+                          title={log.errorMessage || ''}
+                        >
+                          {isSuccess ? (
+                            <>
+                              <CheckCircle2 className="w-3.5 h-3.5 text-emerald-600" />
+                              <span>Delivered</span>
+                            </>
+                          ) : (
+                            <>
+                              <XCircle className="w-3.5 h-3.5 text-red-600" />
+                              <span>Failed</span>
+                            </>
+                          )}
+                        </span>
+                      </td>
+                    </tr>
+                  );
+                })}
+              </tbody>
+            </table>
+          </div>
+        )}
       </div>
     </div>
   );

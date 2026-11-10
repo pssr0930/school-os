@@ -44,7 +44,8 @@ router.get('/public-info', (req, res) => {
   }
 
   const motto = (school as any).motto || 'Empowering Minds, Shaping Futures & Inspiring Leaders';
-  const logo = school.logoUrl || (school as any).logo_url || '/pssr-logo.png';
+  const rawLogo = school.logoUrl || (school as any).logo_url || '/pssr-logo.png';
+  const logo = rawLogo.includes('murthy-school-website.vercel.app') ? '/pssr-logo.png' : rawLogo;
 
   res.json({
     success: true,
@@ -74,13 +75,13 @@ router.get('/lookup/:code', (req, res) => {
   if (!school && (code === 'MHS' || code.includes('MURTHY') || dbStore.schools.length === 0)) {
     console.warn(`⚠️ [School Routes Warning] School code "${code}" lookup fallback used for default institution.`);
     school = dbStore.schools.find(s => (s.schoolCode || (s as any).school_code) === 'MHS') || {
-      id: 'sch-1786045901898',
+      id: 'ec18034a-1640-4e97-a5c2-097a36152a8b',
       name: 'Murthy High School',
       schoolCode: 'MHS',
       school_code: 'MHS',
       motto: 'Empowering Minds, Shaping Futures & Inspiring Leaders',
-      logoUrl: 'https://murthy-school-website.vercel.app/assets/school-logo.png',
-      logo_url: 'https://murthy-school-website.vercel.app/assets/school-logo.png',
+      logoUrl: '/pssr-logo.png',
+      logo_url: '/pssr-logo.png',
       address: 'Sarpavaram police station road, near SRMT mall',
       city: 'kakinada',
       phone: '9121454554',
@@ -99,7 +100,8 @@ router.get('/lookup/:code', (req, res) => {
   }
 
   const motto = (school as any).motto || 'Empowering Minds, Shaping Futures & Inspiring Leaders';
-  const logo = school.logoUrl || (school as any).logo_url || '/pssr-logo.png';
+  const rawLogo = school.logoUrl || (school as any).logo_url || '/pssr-logo.png';
+  const logo = rawLogo.includes('murthy-school-website.vercel.app') ? '/pssr-logo.png' : rawLogo;
 
   res.json({
     success: true,

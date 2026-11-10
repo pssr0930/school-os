@@ -1,4 +1,5 @@
 import { dbStore, supabaseAdmin } from '../config/supabase';
+import { env } from '../config/env';
 import { PaymentItem } from '../types';
 import { StudentService } from './student.service';
 import crypto from 'crypto';
@@ -12,6 +13,7 @@ function toUuid(idStr: string): string {
 }
 
 export class PaymentService {
+  private static checkedPaymentSchools = new Set<string>();
   static generateSequentialReceiptNumber(schoolId: string): string {
     const schoolPayments = dbStore.payments.filter(p => p.schoolId === schoolId || (p as any).school_id === schoolId);
     const maxNum = schoolPayments.reduce((max, p) => {
@@ -145,16 +147,22 @@ export class PaymentService {
 
     let list = dbStore.payments.filter(p => p.schoolId === schoolId || (p as any).school_id === schoolId);
 
-    // If local memory is empty for this specific school, fetch real payment logs from Supabase Cloud PostgreSQL
-    if (list.length === 0) {
+    // One-time hydration check per school (only if real Supabase credentials configured, strictly cached in memory afterwards)
+    if (list.length === 0 && !this.checkedPaymentSchools.has(schoolId) && env.SUPABASE_URL && env.SUPABASE_SERVICE_ROLE_KEY && !env.SUPABASE_SERVICE_ROLE_KEY.includes('placeholder')) {
+      this.checkedPaymentSchools.add(schoolId);
       try {
-        const { data: cloudPayments } = await supabaseAdmin
+        const timeoutPromise = new Promise<{ data: any[] | null; error: any }>((_, reject) =>
+          setTimeout(() => reject(new Error('Supabase payments fetch timeout')), 2000)
+        );
+        const fetchPromise = supabaseAdmin
           .from('payments')
           .select('*')
           .eq('school_id', schoolId);
 
+        const { data: cloudPayments } = await Promise.race([fetchPromise, timeoutPromise]) as any;
+
         if (cloudPayments && cloudPayments.length > 0) {
-          cloudPayments.forEach(cp => {
+          cloudPayments.forEach((cp: any) => {
             const mapped: PaymentItem = {
               id: cp.id,
               schoolId: cp.school_id,
@@ -173,12 +181,13 @@ export class PaymentService {
               dbStore.payments.push(mapped);
             }
           });
-          dbStore.saveToDisk();
           list = dbStore.payments.filter(p => p.schoolId === schoolId || (p as any).school_id === schoolId);
         }
       } catch (err) {
-        console.warn('[Supabase Payments Fetch Warning]', err);
+        // Silently continue with instant in-memory list
       }
+    } else {
+      this.checkedPaymentSchools.add(schoolId);
     }
 
     if (dbStore.students.length === 0) {
