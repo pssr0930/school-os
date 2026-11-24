@@ -335,12 +335,12 @@ export const PrintableReceipt: React.FC<ReceiptDataProps> = ({ receipt, onClose 
   return (
     <div className="space-y-4">
       {/* 1. ACTION TOOLBAR (HIDDEN IN PRINT) */}
-      <div className="no-print bg-slate-900 text-white p-3 rounded-2xl flex items-center justify-between gap-4 shadow-lg border border-slate-800 flex-wrap">
+      <div className="no-print bg-[#1F2937] text-[#F3F4F6] p-3 rounded-lg flex items-center justify-between gap-4 border border-[#303B4D] flex-wrap">
         <div className="flex items-center gap-2">
-          <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-xs font-bold uppercase tracking-wider">
+          <span className="px-2 py-0.5 bg-[#243244] text-blue-400 border border-[#303B4D] rounded text-xs font-medium uppercase tracking-wider">
             A4 Portrait
           </span>
-          <span className="text-xs text-slate-300 font-medium hidden sm:inline">
+          <span className="text-xs text-[#9CA3AF] font-medium hidden sm:inline">
             Official Dual Copy (Parent & School Copy)
           </span>
         </div>
@@ -350,7 +350,7 @@ export const PrintableReceipt: React.FC<ReceiptDataProps> = ({ receipt, onClose 
           <button
             type="button"
             onClick={handlePrint}
-            className="flex items-center gap-1.5 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors"
           >
             <Printer className="w-4 h-4" />
             <span>Print Receipt</span>
@@ -361,7 +361,7 @@ export const PrintableReceipt: React.FC<ReceiptDataProps> = ({ receipt, onClose 
             type="button"
             disabled={isGeneratingPDF}
             onClick={handleDownloadPDF}
-            className="flex items-center gap-1.5 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 disabled:opacity-50"
+            className="flex items-center gap-1.5 px-3.5 py-1.5 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] font-medium text-xs rounded-lg border border-[#303B4D] transition-colors disabled:opacity-50"
           >
             {isGeneratingPDF ? (
               <>
@@ -370,7 +370,7 @@ export const PrintableReceipt: React.FC<ReceiptDataProps> = ({ receipt, onClose 
               </>
             ) : pdfSuccess ? (
               <>
-                <Check className="w-4 h-4 text-emerald-300" />
+                <Check className="w-4 h-4 text-emerald-400" />
                 <span>Saved PDF!</span>
               </>
             ) : (
@@ -385,7 +385,7 @@ export const PrintableReceipt: React.FC<ReceiptDataProps> = ({ receipt, onClose 
             <button
               type="button"
               onClick={onClose}
-              className="p-2 bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white rounded-xl transition-colors ml-1"
+              className="p-1.5 bg-[#243244] hover:bg-gray-700 text-[#9CA3AF] hover:text-[#F3F4F6] rounded-lg border border-[#303B4D] transition-colors ml-1"
             >
               <X className="w-4 h-4" />
             </button>
@@ -394,7 +394,7 @@ export const PrintableReceipt: React.FC<ReceiptDataProps> = ({ receipt, onClose 
       </div>
 
       {/* 2. A4 PORTRAIT RECEIPT CONTAINER */}
-      <div className="overflow-x-auto flex justify-center bg-slate-100 p-3 sm:p-4 rounded-2xl border border-slate-200">
+      <div className="overflow-x-auto flex justify-center bg-[#111827] p-3 sm:p-4 rounded-lg border border-[#303B4D]">
         <div 
           ref={printRef}
           style={{ transform: `scale(${scale})`, transformOrigin: 'top center' }}

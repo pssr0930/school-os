@@ -113,41 +113,36 @@ export const SchoolCodeEntryPage: React.FC = () => {
   };
 
   return (
-    <div className="min-h-screen h-screen w-full bg-slate-950 text-slate-100 flex flex-col justify-between overflow-hidden relative font-sans selection:bg-blue-600 selection:text-white">
-      {/* SOPHISTICATED AMBIENT GLOW BACKDROPS */}
-      <div className="absolute inset-0 bg-[radial-gradient(ellipse_at_top,_var(--tw-gradient-stops))] from-blue-950/40 via-slate-950 to-black pointer-events-none" />
-      <div className="absolute top-1/4 left-1/4 w-[600px] h-[600px] bg-blue-600/10 rounded-full blur-[140px] pointer-events-none animate-pulse-glow" />
-      <div className="absolute bottom-1/4 right-1/4 w-[600px] h-[600px] bg-indigo-600/10 rounded-full blur-[140px] pointer-events-none" />
-
+    <div className="min-h-screen h-screen w-full bg-[#111827] text-[#F3F4F6] flex flex-col justify-between overflow-hidden relative font-sans">
       {/* TOP MINIMAL BRAND HEADER */}
-      <header className="relative z-20 w-full max-w-7xl mx-auto px-6 h-20 flex items-center justify-between shrink-0">
+      <header className="relative z-20 w-full max-w-7xl mx-auto px-6 h-16 flex items-center justify-between shrink-0 border-b border-[#303B4D]/60">
         <div className="flex items-center gap-3">
-          <div className="w-10 h-10 rounded-2xl bg-gradient-to-tr from-blue-600 to-indigo-600 flex items-center justify-center p-2 shadow-lg shadow-blue-500/20 border border-blue-400/30">
-            <GraduationCap className="w-6 h-6 text-white" />
+          <div className="w-8 h-8 rounded-lg bg-blue-600 flex items-center justify-center p-1.5 shadow-sm">
+            <GraduationCap className="w-5 h-5 text-white" />
           </div>
           <div>
             <div className="flex items-center gap-2">
-              <span className="font-black text-lg text-white tracking-wider">SCHOOL OS</span>
-              <span className="text-[9px] font-extrabold uppercase tracking-widest text-blue-400 bg-blue-500/10 px-2.5 py-0.5 rounded-full border border-blue-500/30">
+              <span className="font-semibold text-base text-[#F3F4F6] tracking-wider">SCHOOL OS</span>
+              <span className="text-[10px] font-medium uppercase tracking-wider text-blue-400 bg-blue-500/10 px-2 py-0.5 rounded border border-blue-500/20">
                 GATEWAY
               </span>
             </div>
-            <p className="text-[10px] text-slate-400 font-medium">Enterprise Institutional Operating System</p>
+            <p className="text-[10px] text-[#9CA3AF]">Enterprise Institutional Operating System</p>
           </div>
         </div>
 
-        <div className="flex items-center gap-4 text-xs font-semibold text-slate-300">
+        <div className="flex items-center gap-3 text-xs font-medium text-[#9CA3AF]">
           <button
             onClick={() => navigate('/agent/login')}
-            className="hidden sm:flex items-center gap-1.5 text-slate-400 hover:text-white transition-colors py-1.5 px-3 rounded-xl hover:bg-slate-900 border border-transparent hover:border-slate-800"
+            className="hidden sm:flex items-center gap-1.5 text-[#9CA3AF] hover:text-[#F3F4F6] transition-colors py-1.5 px-3 rounded-lg hover:bg-[#1F2937]"
           >
-            <Sparkles className="w-3.5 h-3.5 text-purple-400" />
+            <Sparkles className="w-3.5 h-3.5 text-blue-400" />
             <span>Agent Portal</span>
           </button>
 
           <button
             onClick={() => navigate('/register-school')}
-            className="flex items-center gap-1.5 bg-slate-900 hover:bg-slate-800 text-blue-400 hover:text-blue-300 border border-slate-800 hover:border-blue-500/30 px-3.5 py-1.5 rounded-xl transition-all shadow-sm"
+            className="flex items-center gap-1.5 bg-[#1F2937] hover:bg-gray-700 text-[#F3F4F6] border border-[#303B4D] px-3.5 py-1.5 rounded-lg transition-colors"
           >
             <Building2 className="w-3.5 h-3.5" />
             <span>Register School</span>
@@ -156,34 +151,34 @@ export const SchoolCodeEntryPage: React.FC = () => {
       </header>
 
       {/* CENTRAL HERO & SCHOOL CODE ENTRY SECTION */}
-      <main className="relative z-10 w-full max-w-4xl mx-auto px-6 flex-1 flex flex-col items-center justify-center text-center space-y-8 my-auto">
+      <main className="relative z-10 w-full max-w-4xl mx-auto px-6 flex-1 flex flex-col items-center justify-center text-center space-y-6 my-auto">
         {/* Eyebrow Pill */}
-        <div className="inline-flex items-center gap-2 px-3.5 py-1 rounded-full bg-blue-500/10 border border-blue-500/30 text-blue-400 text-xs font-bold tracking-wide shadow-sm animate-pulse-glow">
+        <div className="inline-flex items-center gap-2 px-3 py-1 rounded-full bg-blue-500/10 border border-blue-500/20 text-blue-400 text-xs font-medium">
           <Sparkles className="w-3.5 h-3.5 text-blue-400" />
           <span>CONNECT TO YOUR CAMPUS</span>
         </div>
 
         {/* Grand Headline & Supporting Copy */}
-        <div className="space-y-3 max-w-2xl">
-          <h1 className="text-4xl sm:text-6xl font-black text-white tracking-tight leading-tight">
-            Enter Your <span className="bg-gradient-to-r from-blue-400 via-indigo-300 to-emerald-400 bg-clip-text text-transparent">School Code</span>
+        <div className="space-y-2 max-w-2xl">
+          <h1 className="text-3xl sm:text-5xl font-semibold text-[#F3F4F6] tracking-tight leading-tight">
+            Enter Your School Code
           </h1>
-          <p className="text-sm sm:text-base text-slate-400 font-normal leading-relaxed">
+          <p className="text-xs sm:text-sm text-[#9CA3AF] max-w-lg mx-auto leading-relaxed">
             Connect to your institution&apos;s tailored digital entrance portal for student attendance, fee receipts, parent notifications, and academic operations.
           </p>
         </div>
 
-        {/* High-Contrast Code Entry Card */}
-        <div className="w-full max-w-xl bg-slate-900/90 border border-slate-800/90 rounded-3xl p-6 sm:p-8 shadow-2xl backdrop-blur-2xl space-y-5 text-left relative group hover:border-slate-700/80 transition-all">
-          <form onSubmit={handleFormSubmit} className="space-y-4">
+        {/* Code Entry Card */}
+        <div className="w-full max-w-md bg-[#1F2937] border border-[#303B4D] rounded-lg p-6 sm:p-7 shadow-lg space-y-4 text-left">
+          <form onSubmit={handleFormSubmit} className="space-y-3.5">
             <div>
-              <label className="block text-[11px] font-extrabold uppercase tracking-widest text-slate-300 mb-2">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 Institution Code
               </label>
               
               <div className="relative flex items-center">
-                <div className="absolute left-4 flex items-center pointer-events-none text-slate-400 group-focus-within:text-blue-400 transition-colors">
-                  <Building2 className="w-5 h-5" />
+                <div className="absolute left-3.5 flex items-center pointer-events-none text-[#9CA3AF]">
+                  <Building2 className="w-4 h-4" />
                 </div>
 
                 <input
@@ -196,14 +191,14 @@ export const SchoolCodeEntryPage: React.FC = () => {
                     if (errorMessage) setErrorMessage('');
                   }}
                   placeholder="e.g. MHS"
-                  className="w-full h-14 bg-slate-950 border border-slate-800 rounded-2xl pl-12 pr-12 text-lg font-mono font-black text-white uppercase tracking-widest placeholder:text-slate-600 focus:outline-none focus:border-blue-500 focus:ring-4 focus:ring-blue-500/20 transition-all shadow-inner"
+                  className="w-full h-11 bg-[#243244] border border-[#303B4D] rounded-lg pl-10 pr-10 text-base font-mono font-semibold text-[#F3F4F6] uppercase tracking-widest placeholder:text-[#9CA3AF] focus:outline-none focus:border-blue-500 transition-colors"
                 />
 
                 {schoolCode && (
                   <button
                     type="button"
                     onClick={() => setSchoolCode('')}
-                    className="absolute right-4 text-slate-500 hover:text-white p-1 rounded-lg transition-colors"
+                    className="absolute right-3 text-[#9CA3AF] hover:text-[#F3F4F6] p-1 transition-colors"
                   >
                     <X className="w-4 h-4" />
                   </button>
@@ -213,9 +208,9 @@ export const SchoolCodeEntryPage: React.FC = () => {
 
             {/* Error Message Display */}
             {errorMessage && (
-              <div className="p-3 bg-rose-500/10 border border-rose-500/30 rounded-xl text-xs text-rose-300 flex items-start gap-2.5 animate-in fade-in">
-                <AlertCircle className="w-4 h-4 text-rose-400 shrink-0 mt-0.5" />
-                <span className="leading-snug font-medium">{errorMessage}</span>
+              <div className="p-3 bg-red-950/40 border border-red-800/50 rounded-lg text-xs text-red-400 flex items-start gap-2">
+                <AlertCircle className="w-4 h-4 text-red-400 shrink-0 mt-0.5" />
+                <span className="leading-snug">{errorMessage}</span>
               </div>
             )}
 
@@ -223,7 +218,7 @@ export const SchoolCodeEntryPage: React.FC = () => {
             <button
               type="submit"
               disabled={isLoading || !schoolCode.trim()}
-              className="w-full h-13 py-3.5 px-6 bg-gradient-to-r from-blue-600 via-indigo-600 to-blue-700 hover:from-blue-500 hover:to-indigo-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-extrabold text-sm rounded-2xl shadow-xl shadow-blue-600/30 flex items-center justify-center gap-2 transition-all transform hover:-translate-y-0.5 active:translate-y-0"
+              className="w-full h-10 py-2 px-4 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 disabled:cursor-not-allowed text-white font-medium text-xs rounded-lg flex items-center justify-center gap-2 transition-colors"
             >
               {isLoading ? (
                 <>
@@ -240,8 +235,8 @@ export const SchoolCodeEntryPage: React.FC = () => {
           </form>
 
           {/* Quick Select Chips */}
-          <div className="pt-3 border-t border-slate-800/80 space-y-2">
-            <span className="text-[10px] font-extrabold uppercase tracking-widest text-slate-500 block">
+          <div className="pt-3 border-t border-[#303B4D] space-y-2">
+            <span className="text-[10px] font-medium uppercase tracking-wider text-[#9CA3AF] block">
               Quick Access Campuses:
             </span>
             <div className="flex flex-wrap gap-2">
@@ -250,20 +245,20 @@ export const SchoolCodeEntryPage: React.FC = () => {
                   key={s.id || s.schoolCode}
                   type="button"
                   onClick={() => handleQuickSelect(s.schoolCode)}
-                  className="inline-flex items-center gap-2 px-3 py-1.5 bg-slate-800/90 hover:bg-slate-800 text-slate-200 hover:text-white text-xs font-bold rounded-xl border border-slate-700 hover:border-blue-500/50 transition-all group"
+                  className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] text-xs font-medium rounded-md border border-[#303B4D] transition-colors"
                 >
-                  <span className="font-mono text-blue-400 font-black">{s.schoolCode}</span>
-                  <span>•</span>
-                  <span className="text-slate-300 font-medium truncate max-w-[200px]">{s.name}</span>
-                  <ArrowRight className="w-3 h-3 text-slate-500 group-hover:text-blue-400 group-hover:translate-x-0.5 transition-all" />
+                  <span className="font-mono text-blue-400">{s.schoolCode}</span>
+                  <span className="text-[#9CA3AF]">•</span>
+                  <span className="text-[#9CA3AF] truncate max-w-[150px]">{s.name}</span>
+                  <ArrowRight className="w-3 h-3 text-[#9CA3AF]" />
                 </button>
               ))}
             </div>
           </div>
         </div>
 
-        {/* Feature Highlights Minimal Strip */}
-        <div className="flex items-center justify-center gap-6 text-[11px] font-bold text-slate-400 flex-wrap pt-2">
+        {/* Feature Highlights Strip */}
+        <div className="flex items-center justify-center gap-6 text-[11px] font-medium text-[#9CA3AF] flex-wrap pt-2">
           <div className="flex items-center gap-1.5">
             <CheckCircle2 className="w-3.5 h-3.5 text-emerald-400" />
             <span>Dedicated Campus Entrance</span>
@@ -280,13 +275,13 @@ export const SchoolCodeEntryPage: React.FC = () => {
       </main>
 
       {/* MINIMAL FOOTER */}
-      <footer className="relative z-20 w-full max-w-7xl mx-auto px-6 h-14 border-t border-slate-900 flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-slate-500 shrink-0">
+      <footer className="relative z-20 w-full max-w-7xl mx-auto px-6 h-12 border-t border-[#303B4D] flex flex-col sm:flex-row items-center justify-between gap-2 text-[11px] text-[#9CA3AF] shrink-0">
         <div className="flex items-center gap-3">
           <span>Need help finding your code? Contact your principal&apos;s office.</span>
         </div>
 
         <div className="flex items-center gap-4">
-          <span>Powered by <strong className="text-slate-300">School OS</strong></span>
+          <span>Powered by <strong className="text-[#F3F4F6]">School OS</strong></span>
           <span>•</span>
           <span>© 2026 PSSR Technologies</span>
         </div>

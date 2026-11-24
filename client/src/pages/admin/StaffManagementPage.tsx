@@ -1,7 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { PageHeader } from '../../components/PageHeader';
 import api from '../../services/api';
-import { UserPlus, Key, Eye, EyeOff, Copy, Check, ShieldCheck, Edit3, Save, Trash2 } from 'lucide-react';
+import { UserPlus, Key, Eye, EyeOff, Copy, Check, ShieldCheck, Edit3, Save, Trash2, Users } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 
 export const StaffManagementPage: React.FC = () => {
@@ -71,7 +71,6 @@ export const StaffManagementPage: React.FC = () => {
     try {
       const res = await api.post('/staff', formData);
       if (res.data.success) {
-        const newlyCreated = res.data.data;
         setIsAddModalOpen(false);
         setFormData({
           fullName: '',
@@ -83,33 +82,15 @@ export const StaffManagementPage: React.FC = () => {
           role: 'teacher',
           permissions: ['students.view', 'attendance.view', 'attendance.mark']
         });
-        await fetchStaff();
-
-        // Open View Credentials Modal immediately for newly onboarded staff member
-        setSelectedStaffUser({
-          userId: newlyCreated.userId,
-          fullName: newlyCreated.fullName,
-          email: newlyCreated.staffId,
-          password: newlyCreated.password || formData.password,
-          role: newlyCreated.role,
-          employeeId: newlyCreated.employeeId,
-          phone: formData.phone || 'N/A'
-        });
-        setIsCredModalOpen(true);
+        fetchStaff();
       }
     } catch (err: any) {
-      console.error(err);
-      if (err.response?.data?.errors && Array.isArray(err.response.data.errors)) {
-        const details = err.response.data.errors.map((e: any) => `${e.field}: ${e.message}`).join(', ');
-        setModalError(`Validation Error: ${details}`);
-      } else {
-        setModalError(err.response?.data?.message || 'Failed to create staff member credentials.');
-      }
+      setModalError(err.response?.data?.message || 'Failed to create staff member.');
     }
   };
 
   const handleDeleteStaff = async (userId: string, fullName: string) => {
-    if (!window.confirm(`Are you sure you want to remove staff member "${fullName}"? This will revoke their portal access.`)) {
+    if (!window.confirm(`Are you sure you want to completely remove staff account "${fullName}"? This action cannot be undone.`)) {
       return;
     }
     try {
@@ -184,7 +165,7 @@ export const StaffManagementPage: React.FC = () => {
         fetchStaff();
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to toggle status', err);
     }
   };
 
@@ -195,28 +176,15 @@ export const StaffManagementPage: React.FC = () => {
     return name.slice(0, 2).toUpperCase();
   };
 
-  const getStaffColor = (name: string) => {
-    const gradients = [
-      'from-purple-600 to-indigo-600',
-      'from-blue-600 to-cyan-600',
-      'from-emerald-600 to-teal-600',
-      'from-amber-500 to-orange-600',
-      'from-rose-600 to-pink-600'
-    ];
-    let hash = 0;
-    for (let i = 0; i < (name || '').length; i++) hash += name.charCodeAt(i);
-    return gradients[Math.abs(hash) % gradients.length];
-  };
-
   return (
-    <div className="space-y-4 sm:space-y-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6 text-[#F3F4F6]">
       <PageHeader
         title="Staff & Teacher Directory"
         subtitle="Manage teaching and non-teaching staff, custom alphanumeric credentials, authorization permissions, and account removals."
         action={
           <button
             onClick={() => setIsAddModalOpen(true)}
-            className="flex items-center gap-1.5 px-3 py-2 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md transition-all active:scale-95 shrink-0"
+            className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors shrink-0"
           >
             <UserPlus className="w-4 h-4" />
             <span>Add Staff Member</span>
@@ -224,80 +192,78 @@ export const StaffManagementPage: React.FC = () => {
         }
       />
 
-      {/* ULTRA-COMPACT MOBILE STAFF CARD STACK (< 768px) */}
+      {/* MOBILE STAFF CARD STACK (< 768px) */}
       <div className="block md:hidden space-y-2.5">
         {isLoading ? (
-          <div className="p-6 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs font-semibold">
+          <div className="p-6 text-center text-[#9CA3AF] bg-[#1F2937] rounded-lg border border-[#303B4D] text-xs font-medium">
             Loading staff records...
+          </div>
+        ) : staffList.length === 0 ? (
+          <div className="p-8 text-center bg-[#1F2937] rounded-lg border border-[#303B4D] space-y-2">
+            <Users className="w-6 h-6 mx-auto text-[#9CA3AF] mb-1" />
+            <p className="font-medium text-xs text-[#F3F4F6]">No staff accounts configured.</p>
           </div>
         ) : (
           staffList.map((st) => (
-            <div key={st.userId} className="p-3 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
-              <div className="flex items-center justify-between border-b border-slate-100 pb-2">
+            <div key={st.userId} className="p-3.5 bg-[#1F2937] hover:bg-[#243244]/60 rounded-lg border border-[#303B4D] space-y-2.5 transition-colors">
+              <div className="flex items-center justify-between border-b border-[#303B4D] pb-2">
                 <div className="flex items-center gap-2.5">
-                  <div className={`w-9 h-9 rounded-full bg-gradient-to-br ${getStaffColor(st.fullName)} text-white font-black text-xs flex items-center justify-center shadow-sm`}>
+                  <div className="w-8 h-8 rounded-full bg-[#243244] border border-[#303B4D] text-blue-400 font-semibold text-xs flex items-center justify-center shrink-0">
                     {getInitials(st.fullName)}
                   </div>
                   <div>
-                    <h3 className="font-extrabold text-xs text-slate-900 leading-tight">{st.fullName}</h3>
-                    <span className="font-mono font-bold text-[10px] text-blue-600">{st.employeeId}</span>
+                    <h3 className="font-medium text-xs text-[#F3F4F6] leading-tight">{st.fullName}</h3>
+                    <span className="font-mono text-[10px] text-blue-400">{st.employeeId}</span>
                   </div>
                 </div>
 
                 <button
                   onClick={() => handleToggleStatus(st.userId, st.status)}
-                  className={`px-2 py-0.5 rounded-full font-extrabold text-[9px] uppercase transition-colors ${
-                    st.status === 'active' ? 'bg-emerald-100 text-emerald-800' : 'bg-red-100 text-red-800'
+                  className={`px-2 py-0.5 rounded text-[10px] font-medium uppercase border ${
+                    st.status === 'active' 
+                      ? 'bg-emerald-950/40 text-[#22C55E] border-emerald-800/40' 
+                      : 'bg-red-950/40 text-[#EF4444] border-red-800/40'
                   }`}
                 >
                   {st.status}
                 </button>
               </div>
 
-              <div className="grid grid-cols-2 gap-2 text-[11px] text-slate-600">
+              <div className="grid grid-cols-2 gap-2 text-xs text-[#9CA3AF]">
                 <div>
-                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Username / Staff ID</span>
-                  <span className="font-mono font-bold text-slate-900">{st.email}</span>
+                  <span className="text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider block">Username</span>
+                  <span className="font-mono font-medium text-[#F3F4F6]">{st.email}</span>
                 </div>
-
                 <div>
-                  <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Designation</span>
-                  <span className="font-bold text-slate-800">{st.designation || 'Teacher'}</span>
+                  <span className="text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider block">Designation</span>
+                  <span className="text-[#F3F4F6] font-medium">{st.designation || 'Teacher'}</span>
                 </div>
               </div>
 
-              <div className="pt-2 border-t border-slate-100 flex items-center justify-between gap-1.5">
-                <span className="px-2 py-0.5 bg-purple-50 text-purple-700 font-black uppercase text-[9px] rounded-md border border-purple-200">
-                  {st.role}
-                </span>
+              <div className="pt-2 border-t border-[#303B4D] flex items-center gap-2 justify-end">
+                <button
+                  onClick={() => handleOpenCredModal(st)}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-[#243244] hover:bg-gray-700 text-blue-400 border border-[#303B4D] font-medium text-xs rounded-md transition-colors"
+                >
+                  <Eye className="w-3.5 h-3.5" />
+                  <span>Credentials</span>
+                </button>
 
-                <div className="flex items-center gap-1.5">
-                  <button
-                    onClick={() => handleOpenCredModal(st)}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-extrabold text-xs rounded-xl transition-colors active:scale-95"
-                    title="View Login Credentials & Edit Password"
-                  >
-                    <Eye className="w-3.5 h-3.5 text-blue-600" />
-                    <span>Creds</span>
-                  </button>
+                <button
+                  onClick={() => handleOpenPermModal(st)}
+                  className="flex items-center gap-1 px-2.5 py-1 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] border border-[#303B4D] font-medium text-xs rounded-md transition-colors"
+                >
+                  <Key className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                  <span>Perms</span>
+                </button>
 
-                  <button
-                    onClick={() => handleOpenPermModal(st)}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-slate-100 hover:bg-slate-200 text-slate-800 border border-slate-200 font-extrabold text-xs rounded-xl transition-colors active:scale-95"
-                    title="Manage Permissions"
-                  >
-                    <Key className="w-3.5 h-3.5 text-slate-600" />
-                    <span>Perms</span>
-                  </button>
-
-                  <button
-                    onClick={() => handleDeleteStaff(st.userId, st.fullName)}
-                    className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl transition-colors active:scale-95"
-                    title="Remove Staff Account"
-                  >
-                    <Trash2 className="w-3.5 h-3.5" />
-                  </button>
-                </div>
+                <button
+                  onClick={() => handleDeleteStaff(st.userId, st.fullName)}
+                  className="p-1 bg-[#243244] hover:bg-gray-700 text-[#EF4444] border border-[#303B4D] rounded-md transition-colors"
+                  title="Remove Staff Account"
+                >
+                  <Trash2 className="w-3.5 h-3.5" />
+                </button>
               </div>
             </div>
           ))
@@ -305,76 +271,91 @@ export const StaffManagementPage: React.FC = () => {
       </div>
 
       {/* DESKTOP STAFF TABLE (>= 768px) */}
-      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <table className="w-full text-left border-collapse text-xs">
-          <thead>
-            <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
-              <th className="py-3 px-6">Emp ID</th>
-              <th className="py-3 px-6">Staff Name</th>
-              <th className="py-3 px-6">Staff ID / Username</th>
-              <th className="py-3 px-6">Designation</th>
-              <th className="py-3 px-6">Role</th>
-              <th className="py-3 px-6 text-center">Status</th>
-              <th className="py-3 px-6 text-center">Manage & Actions</th>
-            </tr>
-          </thead>
-          <tbody className="divide-y divide-slate-100">
-            {isLoading ? (
-              <tr>
-                <td colSpan={7} className="py-8 text-center text-slate-400">Loading staff records...</td>
+      <div className="hidden md:block bg-[#1F2937] rounded-lg border border-[#303B4D] overflow-hidden">
+        <div className="overflow-x-auto">
+          <table className="w-full text-left border-collapse text-xs">
+            <thead>
+              <tr className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] font-medium text-xs">
+                <th className="py-2.5 px-5 w-32">Emp ID</th>
+                <th className="py-2.5 px-5">Staff Name</th>
+                <th className="py-2.5 px-5 w-44">Username / ID</th>
+                <th className="py-2.5 px-5 w-40">Designation</th>
+                <th className="py-2.5 px-5 w-28">Role</th>
+                <th className="py-2.5 px-5 text-center w-28">Status</th>
+                <th className="py-2.5 px-5 text-center w-48">Manage & Actions</th>
               </tr>
-            ) : (
-              staffList.map((st) => (
-                <tr key={st.userId} className="hover:bg-slate-50/80 transition-colors">
-                  <td className="py-3.5 px-6 font-mono font-bold text-blue-600">{st.employeeId}</td>
-                  <td className="py-3.5 px-6 font-bold text-slate-900">{st.fullName}</td>
-                  <td className="py-3.5 px-6 font-mono font-semibold text-slate-700">{st.email}</td>
-                  <td className="py-3.5 px-6 font-semibold text-slate-700">{st.designation}</td>
-                  <td className="py-3.5 px-6 uppercase font-bold text-[10px] text-purple-600">{st.role}</td>
-                  <td className="py-3.5 px-6 text-center">
-                    <button
-                      onClick={() => handleToggleStatus(st.userId, st.status)}
-                      className={`px-2.5 py-0.5 rounded-full font-bold text-[10px] uppercase transition-colors ${
-                        st.status === 'active' ? 'bg-emerald-50 text-emerald-700' : 'bg-red-50 text-red-700'
-                      }`}
-                    >
-                      {st.status}
-                    </button>
-                  </td>
-                  <td className="py-3.5 px-6 text-center">
-                    <div className="flex items-center justify-center gap-2">
-                      <button
-                        onClick={() => handleOpenCredModal(st)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-blue-50 hover:bg-blue-100 text-blue-700 border border-blue-200 font-bold text-xs rounded-xl transition-colors"
-                        title="View Login Credentials & Edit Password"
-                      >
-                        <Eye className="w-3.5 h-3.5 text-blue-600" />
-                        <span>Credentials</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleOpenPermModal(st)}
-                        className="flex items-center gap-1 px-3 py-1.5 bg-slate-100 hover:bg-slate-200 text-slate-800 font-bold text-xs rounded-xl transition-colors"
-                        title="Manage Permissions"
-                      >
-                        <Key className="w-3.5 h-3.5 text-slate-600" />
-                        <span>Permissions</span>
-                      </button>
-
-                      <button
-                        onClick={() => handleDeleteStaff(st.userId, st.fullName)}
-                        className="p-1.5 bg-red-50 hover:bg-red-100 text-red-600 border border-red-200 rounded-xl transition-colors"
-                        title="Remove Staff Account"
-                      >
-                        <Trash2 className="w-3.5 h-3.5" />
-                      </button>
-                    </div>
-                  </td>
+            </thead>
+            <tbody className="divide-y divide-[#303B4D] bg-[#1F2937]">
+              {isLoading ? (
+                <tr>
+                  <td colSpan={7} className="py-10 text-center text-xs text-[#9CA3AF]">Loading staff records...</td>
                 </tr>
-              ))
-            )}
-          </tbody>
-        </table>
+              ) : staffList.length === 0 ? (
+                <tr>
+                  <td colSpan={7} className="py-12 text-center text-xs text-[#9CA3AF]">No staff accounts configured yet.</td>
+                </tr>
+              ) : (
+                staffList.map((st) => (
+                  <tr key={st.userId} className="hover:bg-[#243244]/60 transition-colors">
+                    <td className="py-2.5 px-5 font-mono font-medium text-blue-400 tabular-nums">{st.employeeId}</td>
+                    <td className="py-2.5 px-5 font-medium text-[#F3F4F6]">{st.fullName}</td>
+                    <td className="py-2.5 px-5 font-mono text-[#9CA3AF]">{st.email}</td>
+                    <td className="py-2.5 px-5 text-[#F3F4F6]">{st.designation || 'Teacher'}</td>
+                    <td className="py-2.5 px-5 uppercase font-medium text-[10px] text-purple-400">{st.role}</td>
+                    <td className="py-2.5 px-5 text-center">
+                      <button
+                        onClick={() => handleToggleStatus(st.userId, st.status)}
+                        className={`inline-block px-2 py-0.5 rounded text-[10px] font-medium uppercase border ${
+                          st.status === 'active' 
+                            ? 'bg-emerald-950/40 text-[#22C55E] border-emerald-800/40' 
+                            : 'bg-red-950/40 text-[#EF4444] border-red-800/40'
+                        }`}
+                      >
+                        {st.status}
+                      </button>
+                    </td>
+                    <td className="py-2.5 px-5 text-center">
+                      <div className="flex items-center justify-center gap-1.5">
+                        <button
+                          onClick={() => handleOpenCredModal(st)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-[#243244] hover:bg-gray-700 text-blue-400 border border-[#303B4D] font-medium text-xs rounded-md transition-colors"
+                          title="View Login Credentials"
+                        >
+                          <Eye className="w-3.5 h-3.5" />
+                          <span>Credentials</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleOpenPermModal(st)}
+                          className="flex items-center gap-1 px-2.5 py-1 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] border border-[#303B4D] font-medium text-xs rounded-md transition-colors"
+                          title="Manage Permissions"
+                        >
+                          <Key className="w-3.5 h-3.5 text-[#9CA3AF]" />
+                          <span>Perms</span>
+                        </button>
+
+                        <button
+                          onClick={() => handleDeleteStaff(st.userId, st.fullName)}
+                          className="p-1 bg-[#243244] hover:bg-gray-700 text-[#EF4444] border border-[#303B4D] rounded-md transition-colors"
+                          title="Remove Staff Account"
+                        >
+                          <Trash2 className="w-3.5 h-3.5" />
+                        </button>
+                      </div>
+                    </td>
+                  </tr>
+                ))
+              )}
+            </tbody>
+          </table>
+        </div>
+
+        {/* Footer */}
+        <div className="p-3.5 bg-[#1F2937] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
+          <span>
+            Total Staff: <strong className="text-[#F3F4F6] font-medium">{staffList.length}</strong> {staffList.length === 1 ? 'member' : 'members'} enrolled
+          </span>
+        </div>
       </div>
 
       {/* Add Staff Modal */}
@@ -383,62 +364,62 @@ export const StaffManagementPage: React.FC = () => {
         onClose={() => setIsAddModalOpen(false)}
         title="Add Staff Member Account"
       >
-        <form onSubmit={handleCreateStaff} className="space-y-3 text-xs">
+        <form onSubmit={handleCreateStaff} className="space-y-3.5 text-xs">
           {modalError && (
-            <div className="p-2.5 bg-red-50 border border-red-200 text-red-600 rounded-xl text-xs font-bold">
+            <div className="p-3 bg-red-950/40 border border-red-800/40 text-[#EF4444] rounded-lg text-xs font-medium">
               {modalError}
             </div>
           )}
 
           <div>
-            <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Full Name *</label>
+            <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Full Name *</label>
             <input
               required
               value={formData.fullName}
               onChange={(e) => setFormData({ ...formData, fullName: e.target.value })}
               placeholder="e.g. Ramesh Kumar"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs font-bold text-slate-900 focus:outline-none"
+              className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Phone Number</label>
+              <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Phone Number</label>
               <input
                 value={formData.phone}
                 onChange={(e) => setFormData({ ...formData, phone: e.target.value })}
                 placeholder="+91 9876543210"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs text-slate-900 focus:outline-none"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Role *</label>
+              <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Role *</label>
               <select
                 value={formData.role}
                 onChange={(e) => setFormData({ ...formData, role: e.target.value })}
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2 py-1.5 text-xs font-extrabold uppercase text-slate-900 focus:outline-none"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 pr-8 text-xs text-[#F3F4F6] focus:border-blue-500 focus:outline-none cursor-pointer"
               >
-                <option value="teacher">Teacher</option>
-                <option value="staff">Staff</option>
+                <option value="teacher" className="bg-[#1F2937]">Teacher</option>
+                <option value="staff" className="bg-[#1F2937]">Staff</option>
               </select>
             </div>
           </div>
 
           <div>
-            <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Alphanumeric Staff Username *</label>
+            <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Staff ID / Username *</label>
             <input
               required
               type="text"
               value={formData.email}
               onChange={(e) => setFormData({ ...formData, email: e.target.value })}
               placeholder="e.g. MHS01STF, MHS01TCR"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs font-mono font-bold text-slate-900 focus:outline-none"
+              className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs font-mono text-[#F3F4F6] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Fixed Login Password *</label>
+            <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Fixed Login Password *</label>
             <div className="relative">
               <input
                 required
@@ -446,43 +427,43 @@ export const StaffManagementPage: React.FC = () => {
                 value={formData.password}
                 onChange={(e) => setFormData({ ...formData, password: e.target.value })}
                 placeholder="••••••••"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-3 pr-9 py-1.5 text-xs focus:outline-none font-bold"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-3 pr-9 text-xs text-[#F3F4F6] focus:border-blue-500 focus:outline-none"
               />
               <button
                 type="button"
                 onClick={() => setShowPassword(!showPassword)}
-                className="absolute right-2.5 top-2 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#F3F4F6]"
               >
                 {showPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
               </button>
             </div>
           </div>
 
-          <div className="grid grid-cols-2 gap-2">
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
             <div>
-              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Emp ID</label>
+              <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Emp Code</label>
               <input
                 value={formData.employeeId}
                 onChange={(e) => setFormData({ ...formData, employeeId: e.target.value })}
                 placeholder="MHSTF01"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-mono font-bold focus:outline-none"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs font-mono text-[#F3F4F6] focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             <div>
-              <label className="block text-[10px] font-extrabold text-slate-700 uppercase tracking-wider mb-1">Designation</label>
+              <label className="block text-[11px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-1">Designation</label>
               <input
                 value={formData.designation}
                 onChange={(e) => setFormData({ ...formData, designation: e.target.value })}
                 placeholder="Cashier / Co-ordinator"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-900 focus:outline-none"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
           <button
             type="submit"
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 mt-2"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors mt-2"
           >
             Create Staff Credentials
           </button>
@@ -496,51 +477,51 @@ export const StaffManagementPage: React.FC = () => {
         title={`Staff Credentials: ${selectedStaffUser?.fullName}`}
       >
         <div className="space-y-4 text-xs">
-          <div className="p-3 rounded-xl bg-blue-50/70 border border-blue-200 space-y-1">
+          <div className="p-3 rounded-lg bg-[#243244] border border-[#303B4D] space-y-1">
             <div className="flex items-center gap-2">
-              <ShieldCheck className="w-4 h-4 text-blue-600" />
-              <h4 className="font-extrabold text-slate-900 text-xs">{selectedStaffUser?.fullName}</h4>
+              <ShieldCheck className="w-4 h-4 text-blue-400" />
+              <h4 className="font-medium text-[#F3F4F6] text-xs">{selectedStaffUser?.fullName}</h4>
             </div>
-            <p className="text-[10px] text-slate-600 pl-6">
-              {selectedStaffUser?.designation || 'Teacher'} • <span className="uppercase font-extrabold text-purple-600">{selectedStaffUser?.role}</span>
+            <p className="text-[11px] text-[#9CA3AF] pl-6">
+              {selectedStaffUser?.designation || 'Teacher'} • <span className="uppercase font-medium text-purple-400">{selectedStaffUser?.role}</span>
             </p>
           </div>
 
           {passwordSaveMsg && (
-            <div className="p-2.5 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl text-xs font-bold flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
+            <div className="p-2.5 bg-emerald-950/40 border border-emerald-800/40 text-[#22C55E] rounded-lg text-xs font-medium flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#22C55E]" />
               <span>{passwordSaveMsg}</span>
             </div>
           )}
 
           <div className="space-y-3">
             {/* Staff ID Field */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200">
-              <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider mb-0.5">
+            <div className="p-3 bg-[#243244] rounded-lg border border-[#303B4D]">
+              <label className="block text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider mb-0.5">
                 Staff ID / Username
               </label>
               <div className="flex items-center justify-between">
-                <span className="font-mono font-black text-slate-900 text-xs sm:text-sm">{selectedStaffUser?.email}</span>
+                <span className="font-mono font-medium text-[#F3F4F6] text-xs sm:text-sm">{selectedStaffUser?.email}</span>
                 <button
                   onClick={() => handleCopyText(selectedStaffUser?.email || '', 'staffId')}
-                  className="flex items-center gap-1 px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-700 transition-colors active:scale-95"
+                  className="flex items-center gap-1 px-2.5 py-1 bg-[#1F2937] hover:bg-gray-700 border border-[#303B4D] rounded-md text-xs font-medium text-[#F3F4F6] transition-colors"
                 >
-                  {copiedField === 'staffId' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+                  {copiedField === 'staffId' ? <Check className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#9CA3AF]" />}
                   <span>{copiedField === 'staffId' ? 'Copied' : 'Copy'}</span>
                 </button>
               </div>
             </div>
 
             {/* Fixed Password Field with Inline Edit */}
-            <div className="p-3 bg-slate-50 rounded-xl border border-slate-200 space-y-1.5">
+            <div className="p-3 bg-[#243244] rounded-lg border border-[#303B4D] space-y-2">
               <div className="flex items-center justify-between">
-                <label className="block text-[10px] font-extrabold text-slate-500 uppercase tracking-wider">
+                <label className="block text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider">
                   Login Password
                 </label>
                 {!isEditingPassword && (
                   <button
                     onClick={() => { setIsEditingPassword(true); setNewPasswordVal(selectedStaffUser?.password || 'password123'); }}
-                    className="flex items-center gap-1 text-[11px] text-blue-600 hover:text-blue-800 font-extrabold transition-colors"
+                    className="flex items-center gap-1 text-[11px] text-blue-400 hover:text-blue-300 font-medium transition-colors"
                   >
                     <Edit3 className="w-3 h-3" />
                     <span>Edit</span>
@@ -551,12 +532,12 @@ export const StaffManagementPage: React.FC = () => {
               {!isEditingPassword ? (
                 <div className="flex items-center justify-between">
                   <div className="flex items-center gap-2">
-                    <span className="font-mono font-black text-slate-900 text-xs sm:text-sm">
+                    <span className="font-mono font-medium text-[#F3F4F6] text-xs sm:text-sm">
                       {showCredPassword ? (selectedStaffUser?.password || 'password123') : '••••••••••••'}
                     </span>
                     <button
                       onClick={() => setShowCredPassword(!showCredPassword)}
-                      className="text-slate-400 hover:text-slate-600 transition-colors"
+                      className="text-[#9CA3AF] hover:text-[#F3F4F6] transition-colors"
                     >
                       {showCredPassword ? <EyeOff className="w-3.5 h-3.5" /> : <Eye className="w-3.5 h-3.5" />}
                     </button>
@@ -564,25 +545,25 @@ export const StaffManagementPage: React.FC = () => {
 
                   <button
                     onClick={() => handleCopyText(selectedStaffUser?.password || 'password123', 'password')}
-                    className="flex items-center gap-1 px-2 py-1 bg-white hover:bg-slate-100 border border-slate-200 rounded-lg text-xs font-extrabold text-slate-700 transition-colors active:scale-95"
+                    className="flex items-center gap-1 px-2.5 py-1 bg-[#1F2937] hover:bg-gray-700 border border-[#303B4D] rounded-md text-xs font-medium text-[#F3F4F6] transition-colors"
                   >
-                    {copiedField === 'password' ? <Check className="w-3.5 h-3.5 text-emerald-600" /> : <Copy className="w-3.5 h-3.5 text-slate-500" />}
+                    {copiedField === 'password' ? <Check className="w-3.5 h-3.5 text-[#22C55E]" /> : <Copy className="w-3.5 h-3.5 text-[#9CA3AF]" />}
                     <span>{copiedField === 'password' ? 'Copied' : 'Copy'}</span>
                   </button>
                 </div>
               ) : (
-                <div className="flex items-center gap-1.5 pt-1">
+                <div className="flex items-center gap-2 pt-1">
                   <input
                     type="text"
                     value={newPasswordVal}
                     onChange={(e) => setNewPasswordVal(e.target.value)}
                     placeholder="New password"
-                    className="flex-1 bg-white border border-slate-300 rounded-lg px-2.5 py-1 text-xs text-slate-900 font-mono focus:outline-none"
+                    className="flex-1 h-8 bg-[#1F2937] border border-[#303B4D] rounded-md px-2.5 text-xs text-[#F3F4F6] font-mono focus:border-blue-500 focus:outline-none"
                   />
                   <button
                     type="button"
                     onClick={handleSaveNewPassword}
-                    className="flex items-center gap-1 px-2.5 py-1 bg-blue-600 text-white text-xs font-bold rounded-lg transition-colors"
+                    className="flex items-center gap-1 px-3 py-1 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-md transition-colors"
                   >
                     <Save className="w-3 h-3" />
                     <span>Save</span>
@@ -590,7 +571,7 @@ export const StaffManagementPage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => setIsEditingPassword(false)}
-                    className="px-2 py-1 bg-slate-200 text-slate-700 text-xs font-bold rounded-lg transition-colors"
+                    className="px-2.5 py-1 bg-[#1F2937] hover:bg-gray-700 text-[#9CA3AF] text-xs font-medium rounded-md border border-[#303B4D] transition-colors"
                   >
                     Cancel
                   </button>
@@ -600,21 +581,21 @@ export const StaffManagementPage: React.FC = () => {
 
             {/* Contact & Employee Details */}
             <div className="grid grid-cols-2 gap-2 text-xs">
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Phone</span>
-                <span className="font-bold text-slate-800">{selectedStaffUser?.phone || 'N/A'}</span>
+              <div className="p-2.5 bg-[#243244] rounded-lg border border-[#303B4D]">
+                <span className="text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider block">Phone</span>
+                <span className="font-medium text-[#F3F4F6]">{selectedStaffUser?.phone || 'N/A'}</span>
               </div>
 
-              <div className="p-2.5 bg-slate-50 rounded-xl border border-slate-200">
-                <span className="text-[9px] font-extrabold text-slate-400 uppercase tracking-wider block">Emp Code</span>
-                <span className="font-mono font-black text-blue-600">{selectedStaffUser?.employeeId || 'N/A'}</span>
+              <div className="p-2.5 bg-[#243244] rounded-lg border border-[#303B4D]">
+                <span className="text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider block">Emp Code</span>
+                <span className="font-mono font-medium text-blue-400">{selectedStaffUser?.employeeId || 'N/A'}</span>
               </div>
             </div>
           </div>
 
           <button
             onClick={() => setIsCredModalOpen(false)}
-            className="w-full py-2.5 bg-slate-900 hover:bg-slate-800 text-white font-extrabold text-xs rounded-xl shadow-xs transition-colors"
+            className="w-full py-2 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] font-medium text-xs rounded-lg border border-[#303B4D] transition-colors"
           >
             Close Window
           </button>
@@ -627,13 +608,13 @@ export const StaffManagementPage: React.FC = () => {
         onClose={() => setIsPermModalOpen(false)}
         title={`Permissions: ${selectedStaffUser?.fullName}`}
       >
-        <div className="space-y-3 text-xs">
-          <p className="text-xs text-slate-500 font-semibold">Toggle feature access for this staff member:</p>
-          <div className="space-y-1.5">
+        <div className="space-y-3.5 text-xs">
+          <p className="text-xs text-[#9CA3AF]">Toggle module authorization permissions for this staff account:</p>
+          <div className="space-y-2">
             {availablePermissions.map(p => {
               const isChecked = selectedPerms.includes(p.key);
               return (
-                <label key={p.key} className="flex items-center gap-2.5 p-2.5 bg-slate-50 rounded-xl border border-slate-200 cursor-pointer hover:bg-slate-100/80 transition-colors">
+                <label key={p.key} className="flex items-center gap-3 p-2.5 bg-[#243244] rounded-lg border border-[#303B4D] cursor-pointer hover:bg-gray-700/50 transition-colors">
                   <input
                     type="checkbox"
                     checked={isChecked}
@@ -641,9 +622,9 @@ export const StaffManagementPage: React.FC = () => {
                       if (e.target.checked) setSelectedPerms([...selectedPerms, p.key]);
                       else setSelectedPerms(selectedPerms.filter(k => k !== p.key));
                     }}
-                    className="w-4 h-4 text-blue-600 rounded-md focus:ring-0"
+                    className="w-4 h-4 text-blue-600 rounded bg-[#1F2937] border-[#303B4D] focus:ring-0"
                   />
-                  <span className="text-xs font-extrabold text-slate-800">{p.label}</span>
+                  <span className="text-xs font-medium text-[#F3F4F6]">{p.label}</span>
                 </label>
               );
             })}
@@ -651,7 +632,7 @@ export const StaffManagementPage: React.FC = () => {
 
           <button
             onClick={handleSavePermissions}
-            className="w-full py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-md transition-all active:scale-95 mt-2"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors mt-2"
           >
             Save Permissions
           </button>
@@ -660,3 +641,5 @@ export const StaffManagementPage: React.FC = () => {
     </div>
   );
 };
+
+export default StaffManagementPage;

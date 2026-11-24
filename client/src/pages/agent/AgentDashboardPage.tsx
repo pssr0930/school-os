@@ -8,12 +8,10 @@ import {
   Search, 
   ShieldCheck, 
   Users, 
-  GraduationCap, 
   CheckCircle2, 
   ExternalLink, 
   LogOut, 
   Clock, 
-  Calendar, 
   Sparkles,
   Key
 } from 'lucide-react';
@@ -182,39 +180,39 @@ export const AgentDashboardPage: React.FC = () => {
   const totalStudentsAllSchools = schools.reduce((sum, s) => sum + (s.studentCount || 0), 0);
 
   return (
-    <div className="min-h-screen bg-slate-950 text-slate-100 flex flex-col">
+    <div className="min-h-screen bg-[#111827] text-[#F3F4F6] flex flex-col">
       {/* Agent Top Navbar */}
-      <header className="h-20 bg-slate-900 border-b border-slate-800 px-8 flex items-center justify-between sticky top-0 z-30 shadow-md">
+      <header className="h-14 bg-[#1F2937] border-b border-[#303B4D] px-6 flex items-center justify-between sticky top-0 z-30">
         <div className="flex items-center gap-3">
           <img 
             src="/pssr-logo.png" 
             alt="School OS Logo" 
-            className="w-10 h-10 rounded-xl object-contain bg-white p-1 shadow-lg shadow-blue-500/20 shrink-0" 
+            className="w-7 h-7 rounded-md object-contain bg-white p-0.5 shrink-0" 
           />
           <div>
-            <h1 className="font-extrabold text-white tracking-wide text-base leading-none">PSSR AGENT OPERATIONS</h1>
-            <span className="text-[10px] uppercase font-bold text-blue-400 tracking-wider">SuperAdmin School Provisioning Hub</span>
+            <h1 className="font-semibold text-[#F3F4F6] text-sm leading-none">PSSR AGENT OPERATIONS</h1>
+            <span className="text-[10px] uppercase font-medium text-blue-400 tracking-wider">SuperAdmin Provisioning Hub</span>
           </div>
         </div>
 
-        <div className="flex items-center gap-3">
+        <div className="flex items-center gap-2.5">
           <button
             onClick={() => setIsEditPasswordOpen(true)}
-            className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-slate-200 hover:text-white font-bold text-xs rounded-xl border border-slate-700 transition-all"
+            className="h-8 px-3 bg-[#243244] hover:bg-[#303B4D] text-[#F3F4F6] font-medium text-xs rounded-lg border border-[#303B4D] transition-colors flex items-center gap-1.5"
           >
-            <Key className="w-4 h-4 text-blue-400" />
-            <span>Edit Agent Password</span>
+            <Key className="w-3.5 h-3.5 text-blue-400" />
+            <span className="hidden sm:inline">Change Password</span>
           </button>
 
           <button
             onClick={() => setIsRegisterModalOpen(true)}
-            className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all"
+            className="h-8 px-3 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center gap-1.5 shadow-sm"
           >
-            <Plus className="w-4 h-4" />
-            <span>Provision & Register New School</span>
+            <Plus className="w-3.5 h-3.5" />
+            <span>Provision School</span>
           </button>
 
-          <div className="h-6 w-px bg-slate-800" />
+          <div className="h-4 w-px bg-[#303B4D]" />
 
           <button
             onClick={() => {
@@ -223,7 +221,7 @@ export const AgentDashboardPage: React.FC = () => {
               navigate('/');
             }}
             title="Sign Out Agent"
-            className="p-2 text-slate-400 hover:text-red-400 hover:bg-slate-800 rounded-xl transition-colors"
+            className="p-1.5 text-[#9CA3AF] hover:text-[#EF4444] hover:bg-[#243244] rounded-lg transition-colors"
           >
             <LogOut className="w-4 h-4" />
           </button>
@@ -231,126 +229,126 @@ export const AgentDashboardPage: React.FC = () => {
       </header>
 
       {/* Main Body */}
-      <main className="flex-1 max-w-7xl w-full mx-auto p-8 space-y-8">
+      <main className="flex-1 max-w-7xl w-full mx-auto p-4 md:p-6 lg:p-8 space-y-6">
         {/* Banner */}
-        <div className="bg-gradient-to-r from-blue-900 via-indigo-950 to-slate-900 border border-blue-500/30 rounded-3xl p-8 shadow-2xl flex flex-col md:flex-row items-start md:items-center justify-between gap-6 relative overflow-hidden">
-          <div className="space-y-2 relative z-10">
-            <span className="inline-flex items-center gap-1.5 px-3 py-1 bg-blue-500/20 border border-blue-500/30 rounded-full text-blue-300 text-[10px] font-extrabold uppercase tracking-wider">
-              <Sparkles className="w-3.5 h-3.5 text-blue-400" />
-              <span>Multi-Tenant Enterprise License Network</span>
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex flex-col md:flex-row items-start md:items-center justify-between gap-4">
+          <div className="space-y-1.5">
+            <span className="inline-flex items-center gap-1 px-2 py-0.5 bg-blue-500/10 border border-blue-500/20 rounded text-blue-400 text-[10px] font-medium uppercase tracking-wider">
+              <Sparkles className="w-3 h-3 text-blue-400" />
+              <span>Multi-Tenant Enterprise Network</span>
             </span>
-            <h2 className="text-2xl font-extrabold text-white">Registered Client Schools Roster</h2>
-            <p className="text-xs text-slate-400 max-w-2xl leading-relaxed">
+            <h2 className="text-lg font-semibold text-[#F3F4F6]">Registered Client Schools Roster</h2>
+            <p className="text-xs text-[#9CA3AF] max-w-2xl leading-relaxed">
               Register new buyer schools, configure administrator credentials, and launch directly into client school dashboards.
             </p>
           </div>
 
           <button
             onClick={() => setIsRegisterModalOpen(true)}
-            className="px-5 py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-emerald-600/30 transition-all shrink-0 relative z-10 flex items-center gap-2"
+            className="h-9 px-4 bg-emerald-600 hover:bg-emerald-500 text-white font-medium text-xs rounded-lg transition-colors shrink-0 flex items-center gap-1.5"
           >
-            <Building className="w-4 h-4" />
+            <Building className="w-3.5 h-3.5" />
             <span>Register New School</span>
           </button>
         </div>
 
         {/* 3 Executive Agent KPI Cards */}
-        <div className="grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 shadow-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Provisioned Client Schools</span>
-            <div className="text-3xl font-extrabold text-white font-mono">{schools.length} Schools</div>
-            <span className="text-[10px] text-emerald-400 font-bold block">100% Active Enterprise Licenses</span>
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+          <div className="p-4 rounded-lg bg-[#1F2937] border border-[#303B4D] space-y-1">
+            <span className="text-xs font-medium text-[#9CA3AF] block">Provisioned Client Schools</span>
+            <div className="text-2xl font-bold text-[#F3F4F6] font-mono">{schools.length} Schools</div>
+            <span className="text-[11px] text-[#22C55E] font-medium block">100% Active Enterprise Licenses</span>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 shadow-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">Total Enrolled Students</span>
-            <div className="text-3xl font-extrabold text-blue-400 font-mono">{totalStudentsAllSchools} Students</div>
-            <span className="text-[10px] text-slate-400 font-medium block">Across all registered tenant schools</span>
+          <div className="p-4 rounded-lg bg-[#1F2937] border border-[#303B4D] space-y-1">
+            <span className="text-xs font-medium text-[#9CA3AF] block">Total Enrolled Students</span>
+            <div className="text-2xl font-bold text-blue-400 font-mono">{totalStudentsAllSchools} Students</div>
+            <span className="text-[11px] text-[#9CA3AF] font-normal block">Across all registered tenant schools</span>
           </div>
 
-          <div className="p-5 rounded-2xl bg-slate-900 border border-slate-800 space-y-2 shadow-sm">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400 block">PSSR License Status</span>
-            <div className="text-3xl font-extrabold text-emerald-400 font-mono">Enterprise Active</div>
-            <span className="text-[10px] text-slate-400 font-medium block">Agent SuperAdmin Operations</span>
+          <div className="p-4 rounded-lg bg-[#1F2937] border border-[#303B4D] space-y-1">
+            <span className="text-xs font-medium text-[#9CA3AF] block">PSSR License Status</span>
+            <div className="text-2xl font-bold text-[#22C55E] font-mono">Enterprise Active</div>
+            <span className="text-[11px] text-[#9CA3AF] font-normal block">Agent SuperAdmin Operations</span>
           </div>
         </div>
 
         {/* Schools Roster Table */}
-        <div className="bg-slate-900 rounded-3xl border border-slate-800 shadow-xl p-6 space-y-4">
-          <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-800 pb-4">
+        <div className="bg-[#1F2937] rounded-lg border border-[#303B4D] overflow-hidden">
+          <div className="p-4 border-b border-[#303B4D] flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3">
             <div>
-              <h3 className="font-extrabold text-lg text-white flex items-center gap-2">
-                <Building className="w-5 h-5 text-blue-400" />
+              <h3 className="font-semibold text-sm text-[#F3F4F6] flex items-center gap-2">
+                <Building className="w-4 h-4 text-blue-400" />
                 <span>Provisioned Tenant Schools ({filteredSchools.length})</span>
               </h3>
-              <p className="text-xs text-slate-400">All registered client schools provisioned by authorized agents.</p>
+              <p className="text-xs text-[#9CA3AF]">All registered client schools provisioned by authorized agents.</p>
             </div>
 
             <div className="relative w-full sm:w-72">
-              <Search className="w-4 h-4 text-slate-500 absolute left-3 top-2.5" />
+              <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-3 top-3" />
               <input
                 type="text"
                 value={searchTerm}
                 onChange={(e) => setSearchTerm(e.target.value)}
                 placeholder="Search school name or code..."
-                className="w-full bg-slate-950 border border-slate-800 rounded-xl pl-9 pr-3 py-1.5 text-xs text-white focus:outline-none focus:border-blue-500"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-9 pr-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
               />
             </div>
           </div>
 
-          <div className="overflow-x-auto border border-slate-800 rounded-2xl">
+          <div className="overflow-x-auto">
             <table className="w-full text-left border-collapse text-xs">
               <thead>
-                <tr className="bg-slate-950 text-slate-400 font-bold uppercase text-[10px]">
-                  <th className="py-3.5 px-6">School Code</th>
-                  <th className="py-3.5 px-6">School Name</th>
-                  <th className="py-3.5 px-6">Admin Contact</th>
-                  <th className="py-3.5 px-6">Location</th>
-                  <th className="py-3.5 px-6 text-center">Enrolled Students</th>
-                  <th className="py-3.5 px-6 text-center">License Status</th>
-                  <th className="py-3.5 px-6 text-center">Action</th>
+                <tr className="bg-[#243244] text-[#9CA3AF] font-medium text-[11px] uppercase tracking-wider border-b border-[#303B4D]">
+                  <th className="py-2.5 px-4">School Code</th>
+                  <th className="py-2.5 px-4">School Name</th>
+                  <th className="py-2.5 px-4">Admin Contact</th>
+                  <th className="py-2.5 px-4">Location</th>
+                  <th className="py-2.5 px-4 text-center">Enrolled Students</th>
+                  <th className="py-2.5 px-4 text-center">License Status</th>
+                  <th className="py-2.5 px-4 text-right">Action</th>
                 </tr>
               </thead>
-              <tbody className="divide-y divide-slate-800">
+              <tbody className="divide-y divide-[#303B4D] bg-[#1F2937]">
                 {isLoading ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">Loading registered schools...</td>
+                    <td colSpan={7} className="py-8 text-center text-[#9CA3AF]">Loading registered schools...</td>
                   </tr>
                 ) : filteredSchools.length === 0 ? (
                   <tr>
-                    <td colSpan={7} className="py-8 text-center text-slate-500">No provisioned schools found. Click &quot;Provision & Register New School&quot; to add a buyer school.</td>
+                    <td colSpan={7} className="py-8 text-center text-[#9CA3AF]">No provisioned schools found. Click &quot;Provision School&quot; to add a buyer school.</td>
                   </tr>
                 ) : (
                   filteredSchools.map((sch) => (
-                    <tr key={sch.id} className="hover:bg-slate-800/50 transition-colors">
-                      <td className="py-4 px-6 font-mono font-extrabold text-blue-400">{sch.schoolCode}</td>
-                      <td className="py-4 px-6">
+                    <tr key={sch.id} className="hover:bg-[#243244]/60 transition-colors">
+                      <td className="py-3 px-4 font-mono font-medium text-blue-400">{sch.schoolCode}</td>
+                      <td className="py-3 px-4">
                         <div>
-                          <p className="font-extrabold text-white text-sm">{sch.name}</p>
-                          <p className="text-[10px] text-slate-500">{sch.email || sch.phone}</p>
+                          <p className="font-medium text-[#F3F4F6]">{sch.name}</p>
+                          <p className="text-[11px] text-[#9CA3AF]">{sch.email || sch.phone}</p>
                         </div>
                       </td>
-                      <td className="py-4 px-6">
+                      <td className="py-3 px-4">
                         <div>
-                          <p className="font-semibold text-slate-200">{sch.adminName}</p>
-                          <p className="text-[10px] text-blue-300 font-mono">{sch.adminEmail}</p>
+                          <p className="font-medium text-[#F3F4F6]">{sch.adminName}</p>
+                          <p className="text-[11px] text-[#9CA3AF] font-mono">{sch.adminEmail}</p>
                         </div>
                       </td>
-                      <td className="py-4 px-6 text-slate-400 font-medium">{sch.city}, {sch.state}</td>
-                      <td className="py-4 px-6 text-center font-extrabold text-white font-mono text-sm">{sch.studentCount}</td>
-                      <td className="py-4 px-6 text-center">
-                        <span className="inline-flex items-center gap-1 text-[10px] font-extrabold uppercase px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-full">
+                      <td className="py-3 px-4 text-[#9CA3AF]">{sch.city}, {sch.state}</td>
+                      <td className="py-3 px-4 text-center font-medium text-[#F3F4F6] font-mono">{sch.studentCount}</td>
+                      <td className="py-3 px-4 text-center">
+                        <span className="inline-flex items-center gap-1 text-[10px] font-medium px-2 py-0.5 bg-emerald-500/10 text-emerald-400 border border-emerald-500/20 rounded">
                           <CheckCircle2 className="w-3 h-3 text-emerald-400" />
                           {sch.status}
                         </span>
                       </td>
-                      <td className="py-4 px-6 text-center">
+                      <td className="py-3 px-4 text-right">
                         <button
                           onClick={() => navigate('/admin/dashboard')}
-                          className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-[11px] rounded-lg shadow-md transition-colors"
+                          className="inline-flex items-center gap-1 px-2.5 py-1 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-md transition-colors"
                         >
-                          <span>Launch School Admin</span>
-                          <ExternalLink className="w-3.5 h-3.5" />
+                          <span>Launch Admin</span>
+                          <ExternalLink className="w-3 h-3" />
                         </button>
                       </td>
                     </tr>
@@ -366,61 +364,61 @@ export const AgentDashboardPage: React.FC = () => {
       <Modal
         isOpen={isEditPasswordOpen}
         onClose={() => setIsEditPasswordOpen(false)}
-        title="Edit / Change Agent Security Password"
+        title="Change Agent Security Password"
       >
-        <form onSubmit={handleSaveAgentPassword} className="space-y-4 text-xs">
+        <form onSubmit={handleSaveAgentPassword} className="space-y-3.5 text-xs">
           {passwordSuccessMsg && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-700 rounded-xl font-bold flex items-center gap-2">
-              <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg font-medium flex items-center gap-2">
+              <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               <span>{passwordSuccessMsg}</span>
             </div>
           )}
 
           {passwordErrorMsg && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-600 rounded-xl font-bold">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-[#EF4444] rounded-lg font-medium">
               {passwordErrorMsg}
             </div>
           )}
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Agent Email / Authorized ID *</label>
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Agent Email / Authorized ID *</label>
             <input
               type="text"
               required
               value={editAgentEmail}
               onChange={(e) => setEditAgentEmail(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+              className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">New Agent Security Password *</label>
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1">New Agent Security Password *</label>
             <input
               type="password"
               required
               value={newAgentPassword}
               onChange={(e) => setNewAgentPassword(e.target.value)}
               placeholder="Enter new password"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+              className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 mb-1">Confirm New Agent Password *</label>
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Confirm New Agent Password *</label>
             <input
               type="password"
               required
               value={confirmAgentPassword}
               onChange={(e) => setConfirmAgentPassword(e.target.value)}
               placeholder="Confirm new password"
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+              className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <button
             type="submit"
             disabled={isSavingPassword}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full h-9 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
           >
             <span>{isSavingPassword ? 'Updating Password...' : 'Save New Agent Password'}</span>
           </button>
@@ -435,28 +433,28 @@ export const AgentDashboardPage: React.FC = () => {
       >
         <form onSubmit={handleRegisterSchoolSubmit} className="space-y-4 text-xs max-h-[75vh] overflow-y-auto pr-1">
           {successMsg && (
-            <div className="p-3 bg-emerald-500/10 border border-emerald-500/30 text-emerald-300 rounded-xl font-bold flex items-center gap-2">
+            <div className="p-3 bg-emerald-500/10 border border-emerald-500/20 text-emerald-400 rounded-lg font-medium flex items-center gap-2">
               <CheckCircle2 className="w-4 h-4 text-emerald-400" />
               <span>{successMsg}</span>
             </div>
           )}
 
           {errorMsg && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 rounded-xl font-bold">
+            <div className="p-3 bg-red-500/10 border border-red-500/20 text-[#EF4444] rounded-lg font-medium">
               {errorMsg}
             </div>
           )}
 
           {/* Section 1: School Details */}
-          <div className="space-y-3 border-b border-slate-200 pb-4">
-            <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <Building className="w-4 h-4 text-blue-600" />
+          <div className="space-y-3 border-b border-[#303B4D] pb-4">
+            <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center gap-1.5">
+              <Building className="w-3.5 h-3.5 text-blue-400" />
               <span>1. School Profile Particulars</span>
             </h4>
 
             <div className="grid grid-cols-1 sm:grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">School Name *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">School Name *</label>
                 <input
                   type="text"
                   name="schoolName"
@@ -464,12 +462,12 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.schoolName}
                   onChange={handleChange}
                   placeholder="e.g. Saint Johns High School"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">School Code (Short) *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">School Code (Short) *</label>
                 <input
                   type="text"
                   name="schoolCode"
@@ -477,13 +475,13 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.schoolCode}
                   onChange={handleChange}
                   placeholder="e.g. SJHS"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 font-mono focus:outline-none focus:border-blue-500"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-mono placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Full Address *</label>
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Full Address *</label>
               <input
                 type="text"
                 name="address"
@@ -491,38 +489,38 @@ export const AgentDashboardPage: React.FC = () => {
                 value={formData.address}
                 onChange={handleChange}
                 placeholder="Street Address, Area"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">City *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">City *</label>
                 <input
                   type="text"
                   name="city"
                   required
                   value={formData.city}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">State *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">State *</label>
                 <input
                   type="text"
                   name="state"
                   required
                   value={formData.state}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">School Phone *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">School Phone *</label>
                 <input
                   type="text"
                   name="phone"
@@ -530,11 +528,11 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.phone}
                   onChange={handleChange}
                   placeholder="9876543210"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">School Official Email *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">School Official Email *</label>
                 <input
                   type="email"
                   name="email"
@@ -542,21 +540,21 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.email}
                   onChange={handleChange}
                   placeholder="contact@school.com"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
           </div>
 
           {/* Section 2: Administrator Account Credentials */}
-          <div className="space-y-3 border-b border-slate-200 pb-4">
-            <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <ShieldCheck className="w-4 h-4 text-emerald-600" />
+          <div className="space-y-3 border-b border-[#303B4D] pb-4">
+            <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center gap-1.5">
+              <ShieldCheck className="w-3.5 h-3.5 text-blue-400" />
               <span>2. School Administrator Credentials</span>
             </h4>
 
             <div>
-              <label className="block font-semibold text-slate-700 mb-1">Admin Full Name *</label>
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Admin Full Name *</label>
               <input
                 type="text"
                 name="adminFullName"
@@ -564,13 +562,13 @@ export const AgentDashboardPage: React.FC = () => {
                 value={formData.adminFullName}
                 onChange={handleChange}
                 placeholder="e.g. Dr. K. Murthy (Principal)"
-                className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
               />
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Admin ID / Login Username *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Admin ID / Login Username *</label>
                 <input
                   type="text"
                   name="adminEmail"
@@ -578,11 +576,11 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.adminEmail}
                   onChange={handleChange}
                   placeholder="admin@school.com or MHS_ADMIN"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Admin Phone *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Admin Phone *</label>
                 <input
                   type="text"
                   name="adminPhone"
@@ -590,14 +588,14 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.adminPhone}
                   onChange={handleChange}
                   placeholder="9876543210"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Password *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Password *</label>
                 <input
                   type="password"
                   name="adminPassword"
@@ -605,11 +603,11 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.adminPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Confirm Password *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Confirm Password *</label>
                 <input
                   type="password"
                   name="adminConfirmPassword"
@@ -617,7 +615,7 @@ export const AgentDashboardPage: React.FC = () => {
                   value={formData.adminConfirmPassword}
                   onChange={handleChange}
                   placeholder="••••••••"
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -625,33 +623,33 @@ export const AgentDashboardPage: React.FC = () => {
 
           {/* Section 3: Configuration */}
           <div className="space-y-3">
-            <h4 className="font-extrabold text-slate-900 text-xs uppercase tracking-wider flex items-center gap-1.5">
-              <Clock className="w-4 h-4 text-purple-600" />
+            <h4 className="text-xs font-semibold text-[#F3F4F6] uppercase tracking-wider flex items-center gap-1.5">
+              <Clock className="w-3.5 h-3.5 text-blue-400" />
               <span>3. System Defaults & Cutoff Settings</span>
             </h4>
 
             <div className="grid grid-cols-2 gap-3">
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">Academic Year *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">Academic Year *</label>
                 <input
                   type="text"
                   name="academicYearName"
                   required
                   value={formData.academicYearName}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
                 />
               </div>
 
               <div>
-                <label className="block font-semibold text-slate-700 mb-1">SMS Cutoff Time *</label>
+                <label className="block text-xs font-medium text-[#9CA3AF] mb-1">SMS Cutoff Time *</label>
                 <input
                   type="time"
                   name="attendanceCutoffTime"
                   required
                   value={formData.attendanceCutoffTime}
                   onChange={handleChange}
-                  className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3 py-2 text-xs text-slate-900 focus:outline-none"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] [color-scheme:dark] focus:border-blue-500 focus:outline-none"
                 />
               </div>
             </div>
@@ -660,7 +658,7 @@ export const AgentDashboardPage: React.FC = () => {
           <button
             type="submit"
             disabled={isSubmitting}
-            className="w-full py-3 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full h-9 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2 mt-4 disabled:opacity-50"
           >
             <span>{isSubmitting ? "Provisioning Buyer School..." : "Confirm & Provision School License"}</span>
           </button>

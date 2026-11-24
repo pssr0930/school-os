@@ -47,24 +47,27 @@ export const Modal: React.FC<ModalProps> = ({
   };
 
   const modalContent = (
-    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-slate-950/80 backdrop-blur-sm transition-all overflow-y-auto">
-      {/* Full screen dim backdrop click handler covering 100% viewport including Top Navbar & Sidebar */}
+    <div className="fixed inset-0 z-[99999] flex items-center justify-center p-2 sm:p-4 bg-black/75 backdrop-blur-xs transition-all overflow-y-auto">
+      {/* Full screen backdrop click handler */}
       <div className="fixed inset-0" onClick={onClose} />
 
-      <div className={`relative bg-slate-900 text-white rounded-2xl shadow-[0_25px_60px_-15px_rgba(0,0,0,0.8)] border border-slate-800 w-full ${widthClasses[maxWidth]} overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-2 sm:my-8 z-10`}>
-        <div className="flex items-center justify-between px-3.5 sm:px-6 py-3 sm:py-4 border-b border-slate-800 bg-slate-800/80">
-          <h3 className="text-sm sm:text-lg font-extrabold text-white leading-tight">{title}</h3>
+      <div className={`relative bg-[#1F2937] text-[#F3F4F6] rounded-xl shadow-2xl border border-[#303B4D] w-full ${widthClasses[maxWidth]} overflow-hidden animate-in fade-in zoom-in-95 duration-150 my-2 sm:my-8 z-10`}>
+        <div className="flex items-center justify-between px-4 sm:px-6 py-3.5 border-b border-[#303B4D] bg-[#243244]">
+          <h3 className="text-sm sm:text-base font-semibold text-[#F3F4F6] leading-tight">{title}</h3>
           <button
             onClick={onClose}
-            className="p-1 text-slate-400 hover:text-white rounded-lg transition-colors hover:bg-slate-700 ml-2 shrink-0"
+            aria-label="Close modal"
+            className="p-1 text-[#9CA3AF] hover:text-[#F3F4F6] rounded-md transition-colors hover:bg-[#1F2937] ml-2 shrink-0"
           >
-            <X className="w-4 h-4 sm:w-5 sm:h-5" />
+            <X className="w-4 h-4" />
           </button>
         </div>
-        <div className="p-2 sm:p-5 max-h-[88vh] overflow-y-auto">{children}</div>
+        <div className="p-4 sm:p-6 max-h-[85vh] overflow-y-auto text-[#F3F4F6]">{children}</div>
       </div>
     </div>
   );
 
   return createPortal(modalContent, document.body);
 };
+
+export default Modal;

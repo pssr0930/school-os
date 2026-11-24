@@ -66,12 +66,12 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultRole }) => {
   };
 
   return (
-    <div className="min-h-screen bg-slate-900 text-slate-100 flex flex-col justify-center items-center p-6 relative">
+    <div className="min-h-screen bg-[#111827] text-[#F3F4F6] flex flex-col justify-center items-center p-6 relative">
       {/* Top Home Navigation Bar */}
       <div className="w-full max-w-md flex justify-between items-center mb-6">
         <Link
           to="/"
-          className="inline-flex items-center gap-2 px-3.5 py-2 rounded-xl bg-slate-800 hover:bg-slate-700 text-slate-300 hover:text-white text-xs font-bold transition-all border border-slate-700 shadow-sm"
+          className="inline-flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1F2937] hover:bg-gray-700 text-[#9CA3AF] hover:text-[#F3F4F6] text-xs font-medium transition-colors border border-[#303B4D]"
         >
           <Home className="w-4 h-4 text-blue-400" />
           <span>Home</span>
@@ -81,17 +81,17 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultRole }) => {
       <div className="w-full max-w-md">
         {/* Header Logo & Title */}
         <div className="text-center mb-8">
-          <div className="inline-flex items-center justify-center p-2 rounded-2xl bg-white shadow-xl shadow-blue-500/10 mb-3">
+          <div className="inline-flex items-center justify-center p-2 rounded-lg bg-white shadow-md mb-3">
             <img 
               src="/pssr-logo.png" 
               alt="School OS Logo" 
-              className="w-12 h-12 rounded-xl object-contain" 
+              className="w-10 h-10 rounded object-contain" 
             />
           </div>
-          <h2 className="text-2xl font-extrabold tracking-tight text-white">
+          <h2 className="text-2xl font-semibold tracking-tight text-[#F3F4F6]">
             {activeTab === 'admin' ? 'School Administrator Sign In' : 'Teacher / Staff Sign In'}
           </h2>
-          <p className="text-xs text-slate-400 mt-1">
+          <p className="text-xs text-[#9CA3AF] mt-1">
             {activeTab === 'admin' 
               ? 'School Management & Administrative Controls' 
               : 'School OS Classroom Operations & Staff Register'}
@@ -100,14 +100,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultRole }) => {
 
         {/* Tab Switcher - Only shown on generic /login route without specific role */}
         {!defaultRole && !location.pathname.includes('/staff') && !location.pathname.includes('/admin') && (
-          <div className="bg-slate-800/80 p-1.5 rounded-2xl mb-6 grid grid-cols-2 gap-1 border border-slate-700/50">
+          <div className="bg-[#1F2937] p-1 rounded-lg mb-6 grid grid-cols-2 gap-1 border border-[#303B4D]">
             <button
               type="button"
               onClick={() => setActiveTab('admin')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-colors ${
                 activeTab === 'admin'
-                  ? 'bg-blue-600 text-white shadow-lg shadow-blue-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
               }`}
             >
               <ShieldCheck className="w-4 h-4" />
@@ -116,10 +116,10 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultRole }) => {
             <button
               type="button"
               onClick={() => setActiveTab('staff')}
-              className={`flex items-center justify-center gap-2 py-2.5 rounded-xl text-xs font-bold transition-all ${
+              className={`flex items-center justify-center gap-2 py-2 rounded-md text-xs font-medium transition-colors ${
                 activeTab === 'staff'
-                  ? 'bg-emerald-600 text-white shadow-lg shadow-emerald-600/30'
-                  : 'text-slate-400 hover:text-slate-200'
+                  ? 'bg-blue-600 text-white'
+                  : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
               }`}
             >
               <UserCheck className="w-4 h-4" />
@@ -129,49 +129,49 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultRole }) => {
         )}
 
         {/* Form Card */}
-        <div className="bg-slate-800/50 border border-slate-700/60 p-8 rounded-3xl shadow-xl backdrop-blur-sm">
+        <div className="bg-[#1F2937] border border-[#303B4D] p-6 sm:p-8 rounded-lg">
           {error && (
-            <div className="p-3 bg-red-500/10 border border-red-500/30 text-red-400 text-xs font-semibold rounded-xl text-center mb-6">
+            <div className="p-3 bg-red-950/40 border border-red-800/50 text-red-400 text-xs font-medium rounded-lg text-center mb-5">
               {error}
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-5">
+          <form onSubmit={handleLogin} className="space-y-4">
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 {activeTab === 'admin' ? 'Admin ID / Username *' : 'Staff Phone / Email *'}
               </label>
               <div className="relative">
-                <Mail className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Mail className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-2.5" />
                 <input
                   type="text"
                   required
                   value={email}
                   onChange={(e) => setEmail(e.target.value)}
                   placeholder={activeTab === 'admin' ? 'admin@school.com or MHS01ADM' : 'staff@school.com, MHS01TCR, or 9876543210'}
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-4 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-9 pr-3 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:outline-none focus:border-blue-500 transition-colors"
                 />
               </div>
             </div>
 
             <div>
-              <label className="block text-xs font-semibold text-slate-300 uppercase tracking-wider mb-2">
+              <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">
                 Password *
               </label>
               <div className="relative">
-                <Lock className="w-4 h-4 text-slate-400 absolute left-3.5 top-3.5" />
+                <Lock className="w-4 h-4 text-[#9CA3AF] absolute left-3 top-2.5" />
                 <input
                   type={showPassword ? 'text' : 'password'}
                   required
                   value={password}
                   onChange={(e) => setPassword(e.target.value)}
                   placeholder="••••••••"
-                  className="w-full bg-slate-900 border border-slate-700 rounded-xl pl-10 pr-10 py-3 text-xs text-white placeholder-slate-500 focus:outline-none focus:border-blue-500 transition-colors"
+                  className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-9 pr-9 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:outline-none focus:border-blue-500 transition-colors"
                 />
                 <button
                   type="button"
                   onClick={() => setShowPassword(!showPassword)}
-                  className="absolute right-3.5 top-3.5 text-slate-400 hover:text-slate-200"
+                  className="absolute right-3 top-2.5 text-[#9CA3AF] hover:text-[#F3F4F6]"
                 >
                   {showPassword ? <EyeOff className="w-4 h-4" /> : <Eye className="w-4 h-4" />}
                 </button>
@@ -187,18 +187,14 @@ export const LoginPage: React.FC<LoginPageProps> = ({ defaultRole }) => {
             <button
               type="submit"
               disabled={isLoading}
-              className={`w-full py-3.5 font-bold text-xs uppercase tracking-wider rounded-xl shadow-lg transition-all flex items-center justify-center gap-2 mt-4 text-white ${
-                activeTab === 'admin' 
-                  ? 'bg-blue-600 hover:bg-blue-500 shadow-blue-600/30' 
-                  : 'bg-emerald-600 hover:bg-emerald-500 shadow-emerald-600/30'
-              }`}
+              className="w-full py-2.5 font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2 mt-4 text-white bg-blue-600 hover:bg-blue-500"
             >
               <span>{isLoading ? 'Authenticating...' : `Sign In to ${activeTab === 'admin' ? 'Admin' : 'Staff'} Portal`}</span>
               <ArrowRight className="w-4 h-4" />
             </button>
           </form>
 
-          <div className="text-center text-[11px] text-slate-500 border-t border-slate-700/60 pt-4 mt-6 uppercase tracking-wider font-semibold">
+          <div className="text-center text-[11px] text-[#9CA3AF] border-t border-[#303B4D] pt-4 mt-6">
             Licensed Product • Contact Administrator for Account Access
           </div>
         </div>
