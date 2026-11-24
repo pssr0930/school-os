@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { 
-  DollarSign, 
   TrendingUp, 
   AlertCircle, 
   CreditCard, 
@@ -17,8 +15,6 @@ import {
   Layers,
   Send,
   MessageSquare,
-  Sparkles,
-  Zap,
   Calendar,
   Wallet
 } from 'lucide-react';
@@ -108,7 +104,7 @@ export const FeeDashboardPage: React.FC = () => {
           sentCount++;
         }
       }
-      setStatusMsg(`🎉 Successfully dispatched ${sentCount} fee reminder SMS notifications to parents!`);
+      setStatusMsg(`Successfully dispatched ${sentCount} fee reminder SMS notifications to parents.`);
       setTimeout(() => setStatusMsg(''), 5000);
     } catch (err) {
       console.error(err);
@@ -130,17 +126,16 @@ export const FeeDashboardPage: React.FC = () => {
     return name.replace(/^Class\s+/i, '').trim() || name;
   };
 
-  // Class Color Palette Generator
-  const getClassColorPalette = (index: number) => {
-    const palettes = [
-      { bg: 'from-blue-600 to-indigo-700', badge: 'bg-blue-600', border: 'border-blue-200', text: 'text-blue-700' },
-      { bg: 'from-emerald-600 to-teal-700', badge: 'bg-emerald-600', border: 'border-emerald-200', text: 'text-emerald-700' },
-      { bg: 'from-purple-600 to-violet-700', badge: 'bg-purple-600', border: 'border-purple-200', text: 'text-purple-700' },
-      { bg: 'from-amber-500 to-orange-600', badge: 'bg-amber-600', border: 'border-amber-200', text: 'text-amber-700' },
-      { bg: 'from-rose-600 to-pink-700', badge: 'bg-rose-600', border: 'border-rose-200', text: 'text-rose-700' },
-      { bg: 'from-cyan-600 to-blue-700', badge: 'bg-cyan-600', border: 'border-cyan-200', text: 'text-cyan-700' }
-    ];
-    return palettes[index % palettes.length];
+  const formatMethodName = (key: string) => {
+    switch (key.toLowerCase()) {
+      case 'cash': return 'Cash';
+      case 'upi': return 'UPI / Digital';
+      case 'bank_transfer':
+      case 'bank': return 'Bank Transfer';
+      case 'cheque': return 'Cheque';
+      case 'other': return 'Other';
+      default: return key.charAt(0).toUpperCase() + key.slice(1);
+    }
   };
 
   const todayFormattedDate = new Date().toLocaleDateString('en-IN', {
@@ -150,270 +145,198 @@ export const FeeDashboardPage: React.FC = () => {
     day: 'numeric'
   });
 
-  return (
-    <div className="space-y-8">
-      {/* Top Header & Actions */}
-      <PageHeader
-        title="Fee Executive Dashboard & Revenue Analytics"
-        subtitle="Real-time collection metrics, class-wise revenue targets, pending balance tracking, and bulk SMS reminder triggers."
-        action={
-          <div className="flex flex-wrap items-center gap-2">
-            <button
-              onClick={() => navigate(`${basePath}/fees/structure`)}
-              className="flex items-center gap-2 px-3.5 py-2.5 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl shadow-sm transition-colors"
-            >
-              <CreditCard className="w-4 h-4 text-blue-400" />
-              <span>Fee Structures</span>
-            </button>
+  const methodEntries = Object.entries(paymentMethodBreakdown || {});
+  const totalMethodAmount = methodEntries.reduce((sum, [_, data]: any) => sum + (data?.amount || 0), 0);
 
-            <button
-              onClick={() => navigate(`${basePath}/payments`)}
-              className="flex items-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-700 text-white font-bold text-xs rounded-xl shadow-md shadow-blue-600/30 transition-all"
-            >
-              <Receipt className="w-4 h-4" />
-              <span>Record Fee Payment</span>
-            </button>
-          </div>
-        }
-      />
+  return (
+    <div className="w-full max-w-7xl mx-auto space-y-6 text-[#F3F4F6]">
+      {/* 1. Page Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl font-semibold text-[#F3F4F6] tracking-tight">Fee Dashboard</h1>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Fee collection, outstanding balances and revenue analytics.</p>
+        </div>
+
+        <div className="flex flex-wrap items-center gap-2.5">
+          <button
+            onClick={() => navigate(`${basePath}/fees/structure`)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-[#1F2937] hover:bg-gray-700 text-[#F3F4F6] text-xs font-medium rounded-lg border border-[#303B4D] transition-colors"
+          >
+            <CreditCard className="w-3.5 h-3.5 text-[#9CA3AF]" />
+            <span>Fee Structures</span>
+          </button>
+
+          <button
+            onClick={() => navigate(`${basePath}/payments`)}
+            className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
+          >
+            <Receipt className="w-3.5 h-3.5" />
+            <span>Record Fee Payment</span>
+          </button>
+        </div>
+      </div>
 
       {statusMsg && (
-        <div className="p-4 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-800 text-xs font-semibold flex items-center gap-2.5 shadow-xs">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600 shrink-0" />
+        <div className="p-3 rounded-lg bg-[#1F2937] border border-[#303B4D] text-xs text-[#F3F4F6] flex items-center gap-2.5">
+          <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0" />
           <span>{statusMsg}</span>
         </div>
       )}
 
-      {/* 4 Executive VIBRANT COLOR KPI Cards */}
-      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-5">
-        {/* Card 1: Total Revenue Collected (EMERALD GRADIENT THEME) */}
-        <div className="bg-gradient-to-br from-emerald-600 via-teal-600 to-emerald-800 text-white rounded-2xl p-5 shadow-lg shadow-emerald-600/20 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-emerald-100 uppercase tracking-wider">Total Revenue Collected</span>
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center font-bold">
-              <DollarSign className="w-5 h-5" />
+      {/* 2. Four Financial Summary Cards */}
+      <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4">
+        {/* Card 1: Total Revenue Collected */}
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[#9CA3AF]">Total Revenue Collected</span>
+              <Receipt className="w-4 h-4 text-[#9CA3AF]" />
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold font-mono tracking-tight">
+            <div className="text-2xl font-semibold text-[#F3F4F6] font-mono mt-2">
               ₹ {isLoading ? '...' : (metrics?.totalCollected || 0).toLocaleString()}
             </div>
-            <div className="mt-2.5 flex items-center justify-between text-[11px] font-semibold text-emerald-100">
-              <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full flex items-center gap-1">
-                <TrendingUp className="w-3.5 h-3.5 text-emerald-200" />
-                {metrics?.overallCollectionPercentage || 0}% Collected
-              </span>
-              <span>{metrics?.totalPaymentsCount || 0} Transactions</span>
-            </div>
+          </div>
+          <div className="mt-3 text-xs text-[#9CA3AF] flex items-center justify-between">
+            <span className="text-[#22C55E] flex items-center gap-1 font-medium">
+              <TrendingUp className="w-3.5 h-3.5" />
+              {metrics?.overallCollectionPercentage || 0}% collected
+            </span>
+            <span>{metrics?.totalPaymentsCount || 0} transactions</span>
           </div>
         </div>
 
-        {/* Card 2: Outstanding Fee Balance (WARM AMBER / ROSE THEME) */}
-        <div className="bg-gradient-to-br from-amber-500 via-orange-600 to-rose-600 text-white rounded-2xl p-5 shadow-lg shadow-amber-500/20 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-amber-100 uppercase tracking-wider">Outstanding Dues</span>
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center font-bold">
-              <AlertCircle className="w-5 h-5" />
+        {/* Card 2: Outstanding Dues */}
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[#9CA3AF]">Outstanding Dues</span>
+              <AlertCircle className="w-4 h-4 text-[#EF4444]" />
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold font-mono tracking-tight">
+            <div className="text-2xl font-semibold text-[#EF4444] font-mono mt-2">
               ₹ {isLoading ? '...' : (metrics?.totalOutstanding || 0).toLocaleString()}
             </div>
-            <div className="mt-2.5 flex items-center justify-between text-[11px] font-semibold text-amber-100">
-              <span className="bg-white/20 backdrop-blur-md px-2.5 py-0.5 rounded-full">
-                {metrics?.defaultersCount || 0} Defaulters Pending
-              </span>
-              <span>Target Dues</span>
-            </div>
+          </div>
+          <div className="mt-3 text-xs text-[#9CA3AF]">
+            {metrics?.defaultersCount || 0} pending defaulters
           </div>
         </div>
 
-        {/* Card 3: Total Net Fee Package (ROYAL BLUE THEME) */}
-        <div className="bg-gradient-to-br from-blue-600 via-indigo-600 to-blue-800 text-white rounded-2xl p-5 shadow-lg shadow-blue-600/20 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-blue-100 uppercase tracking-wider">Total School Fee Target</span>
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center font-bold">
-              <PieChart className="w-5 h-5" />
+        {/* Card 3: Total School Fee Target */}
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[#9CA3AF]">Total School Fee Target</span>
+              <PieChart className="w-4 h-4 text-[#9CA3AF]" />
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold font-mono tracking-tight">
+            <div className="text-2xl font-semibold text-[#F3F4F6] font-mono mt-2">
               ₹ {isLoading ? '...' : (metrics?.totalPackageDue || 0).toLocaleString()}
             </div>
-            <div className="mt-2.5 text-[11px] text-blue-100 flex justify-between font-semibold">
-              <span>Base: ₹ {(metrics?.totalBaseFee || 0).toLocaleString()}</span>
-              <span>Prev: ₹ {(metrics?.totalPreviousYearDue || 0).toLocaleString()}</span>
-            </div>
+          </div>
+          <div className="mt-3 text-xs text-[#9CA3AF] flex items-center justify-between">
+            <span>Base: ₹ {(metrics?.totalBaseFee || 0).toLocaleString()}</span>
+            <span>Prev: ₹ {(metrics?.totalPreviousYearDue || 0).toLocaleString()}</span>
           </div>
         </div>
 
-        {/* Card 4: Fee Concessions Granted (PURPLE / VIOLET THEME) */}
-        <div className="bg-gradient-to-br from-purple-600 via-violet-600 to-purple-800 text-white rounded-2xl p-5 shadow-lg shadow-purple-600/20 flex flex-col justify-between relative overflow-hidden">
-          <div className="flex items-center justify-between">
-            <span className="text-xs font-bold text-purple-100 uppercase tracking-wider">Total Concessions</span>
-            <div className="w-10 h-10 rounded-xl bg-white/20 backdrop-blur-md text-white flex items-center justify-center font-bold">
-              <Users className="w-5 h-5" />
+        {/* Card 4: Fee Concessions Granted */}
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex flex-col justify-between">
+          <div>
+            <div className="flex items-center justify-between">
+              <span className="text-xs font-medium text-[#9CA3AF]">Total Concessions</span>
+              <Users className="w-4 h-4 text-[#9CA3AF]" />
             </div>
-          </div>
-          <div className="mt-4">
-            <div className="text-3xl font-extrabold font-mono tracking-tight">
+            <div className="text-2xl font-semibold text-[#F3F4F6] font-mono mt-2">
               ₹ {isLoading ? '...' : (metrics?.totalConcessions || 0).toLocaleString()}
             </div>
-            <div className="mt-2.5 text-[11px] text-purple-100 font-semibold">
-              Approved Fee Scholarships & Discounts
-            </div>
+          </div>
+          <div className="mt-3 text-xs text-[#9CA3AF]">
+            Approved scholarships & discounts
           </div>
         </div>
       </div>
 
-      {/* TODAY'S PAYMENT ANALYSIS SECTION (BEFORE CLASSWISE FEE COLLECTION) */}
-      <div className="bg-gradient-to-r from-slate-900 via-blue-950 to-slate-900 text-white rounded-3xl p-6 shadow-xl space-y-6 border border-slate-800 relative overflow-hidden">
-        {/* Glowing Background Circles */}
-        <div className="absolute top-0 right-0 w-80 h-80 bg-blue-500/10 rounded-full blur-3xl pointer-events-none" />
-        <div className="absolute bottom-0 left-0 w-80 h-80 bg-emerald-500/10 rounded-full blur-3xl pointer-events-none" />
-
-        <div className="relative z-10 flex flex-col md:flex-row items-start md:items-center justify-between gap-4 border-b border-slate-800 pb-4">
-          <div className="space-y-1">
-            <div className="inline-flex items-center gap-2 px-3 py-1 bg-emerald-500/20 border border-emerald-500/30 rounded-full text-emerald-300 text-xs font-bold uppercase tracking-wider">
-              <Zap className="w-3.5 h-3.5 text-emerald-400 animate-pulse" />
-              <span>Real-Time Today&apos;s Fee Collection Analysis</span>
-            </div>
-            <h2 className="text-xl font-extrabold text-white flex items-center gap-2">
-              <Calendar className="w-5 h-5 text-blue-400" />
-              <span>{todayFormattedDate}</span>
+      {/* 3. Today's Fee Collection Analysis */}
+      <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 space-y-4">
+        <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-3 border-b border-[#303B4D] pb-3">
+          <div>
+            <h2 className="text-sm font-semibold text-[#F3F4F6] flex items-center gap-2">
+              <Calendar className="w-4 h-4 text-blue-400" />
+              <span>Today&apos;s Fee Collection Analysis</span>
             </h2>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">{todayFormattedDate}</p>
           </div>
 
           <button
             onClick={() => navigate(`${basePath}/payments`)}
-            className="flex items-center gap-2 px-4 py-2 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-lg transition-all"
+            className="flex items-center gap-1.5 px-3 py-1.5 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-md transition-colors self-start sm:self-auto"
           >
-            <Receipt className="w-4 h-4" />
+            <Receipt className="w-3.5 h-3.5" />
             <span>Record New Payment Today</span>
           </button>
         </div>
 
-        {/* 3 Today's Key Executive Metrics */}
-        <div className="relative z-10 grid grid-cols-1 md:grid-cols-3 gap-5">
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Today&apos;s Collection Total</span>
-            <div className="text-2xl font-extrabold text-emerald-400 font-mono">
+        {/* 3 Today's Key Metrics */}
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-3">
+          <div className="p-3.5 rounded-lg bg-[#111827] border border-[#303B4D]">
+            <span className="text-xs font-medium text-[#9CA3AF] block">Today&apos;s Collection Total</span>
+            <div className="text-xl font-semibold text-[#22C55E] font-mono mt-1">
               ₹ {(todaysAnalysis?.todaysTotal || 0).toLocaleString()}
             </div>
-            <span className="text-[10px] text-slate-400 block font-medium">Sum of all receipts recorded today</span>
+            <span className="text-[11px] text-[#9CA3AF] block mt-0.5">Sum of all receipts recorded today</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Today&apos;s Receipts Issued</span>
-            <div className="text-2xl font-extrabold text-blue-400 font-mono">
+          <div className="p-3.5 rounded-lg bg-[#111827] border border-[#303B4D]">
+            <span className="text-xs font-medium text-[#9CA3AF] block">Today&apos;s Receipts Issued</span>
+            <div className="text-xl font-semibold text-[#F3F4F6] font-mono mt-1">
               {todaysAnalysis?.todaysCount || 0} Receipts
             </div>
-            <span className="text-[10px] text-slate-400 block font-medium">Completed payment transactions</span>
+            <span className="text-[11px] text-[#9CA3AF] block mt-0.5">Completed payment transactions</span>
           </div>
 
-          <div className="p-4 rounded-2xl bg-white/5 border border-white/10 backdrop-blur-md space-y-1">
-            <span className="text-[11px] font-bold uppercase tracking-wider text-slate-400">Today&apos;s Average Receipt</span>
-            <div className="text-2xl font-extrabold text-purple-400 font-mono">
+          <div className="p-3.5 rounded-lg bg-[#111827] border border-[#303B4D]">
+            <span className="text-xs font-medium text-[#9CA3AF] block">Today&apos;s Average Receipt</span>
+            <div className="text-xl font-semibold text-[#F3F4F6] font-mono mt-1">
               ₹ {(todaysAnalysis?.todaysAvg || 0).toLocaleString()}
             </div>
-            <span className="text-[10px] text-slate-400 block font-medium">Average transaction value</span>
+            <span className="text-[11px] text-[#9CA3AF] block mt-0.5">Average transaction value</span>
           </div>
         </div>
 
-        {/* TODAY'S PAYMENT METHOD BREAKDOWN (CASH, UPI, BANK / OTHER) */}
-        <div className="relative z-10 space-y-2">
-          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <PieChart className="w-4 h-4 text-blue-400" />
-            <span>Today&apos;s Payment Method Distribution</span>
-          </h4>
-
-          <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-            {/* Today's Cash Collection */}
-            <div className="p-4 rounded-2xl bg-emerald-500/10 border border-emerald-500/20 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-emerald-300 flex items-center gap-1.5">
-                  <DollarSign className="w-3.5 h-3.5 text-emerald-400" />
-                  <span>Cash Collection Today</span>
-                </span>
-                <div className="text-xl font-extrabold text-white font-mono mt-1">
-                  ₹ {(todaysAnalysis?.todaysMethodBreakdown?.cash || 0).toLocaleString()}
-                </div>
-              </div>
-              <span className="px-2.5 py-1 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-lg text-[10px] font-bold uppercase">
-                Physical Cash
-              </span>
-            </div>
-
-            {/* Today's UPI / Online Collection */}
-            <div className="p-4 rounded-2xl bg-blue-500/10 border border-blue-500/20 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-blue-300 flex items-center gap-1.5">
-                  <Zap className="w-3.5 h-3.5 text-blue-400" />
-                  <span>UPI / Digital Today</span>
-                </span>
-                <div className="text-xl font-extrabold text-white font-mono mt-1">
-                  ₹ {(todaysAnalysis?.todaysMethodBreakdown?.upi || 0).toLocaleString()}
-                </div>
-              </div>
-              <span className="px-2.5 py-1 bg-blue-500/20 text-blue-300 border border-blue-500/30 rounded-lg text-[10px] font-bold uppercase">
-                Instant UPI
-              </span>
-            </div>
-
-            {/* Today's Bank Transfer / Other Collection */}
-            <div className="p-4 rounded-2xl bg-purple-500/10 border border-purple-500/20 backdrop-blur-md flex items-center justify-between">
-              <div>
-                <span className="text-[11px] font-extrabold uppercase tracking-wider text-purple-300 flex items-center gap-1.5">
-                  <CreditCard className="w-3.5 h-3.5 text-purple-400" />
-                  <span>Bank / Cheque / Other</span>
-                </span>
-                <div className="text-xl font-extrabold text-white font-mono mt-1">
-                  ₹ {((todaysAnalysis?.todaysMethodBreakdown?.bank_transfer || 0) + (todaysAnalysis?.todaysMethodBreakdown?.cheque || 0) + (todaysAnalysis?.todaysMethodBreakdown?.other || 0)).toLocaleString()}
-                </div>
-              </div>
-              <span className="px-2.5 py-1 bg-purple-500/20 text-purple-300 border border-purple-500/30 rounded-lg text-[10px] font-bold uppercase">
-                Bank / Cheque
-              </span>
-            </div>
-          </div>
-        </div>
-
-        {/* Today's Recent Transactions Table */}
-        <div className="relative z-10 space-y-3 pt-2">
-          <h4 className="text-xs font-bold text-slate-300 uppercase tracking-wider flex items-center gap-2">
-            <Wallet className="w-4 h-4 text-emerald-400" />
+        {/* Today's Payment Activity Ledger */}
+        <div className="space-y-2 pt-2 border-t border-[#303B4D]">
+          <h3 className="text-xs font-medium text-[#9CA3AF] flex items-center gap-1.5">
+            <Wallet className="w-3.5 h-3.5 text-[#9CA3AF]" />
             <span>Today&apos;s Payment Activity Ledger</span>
-          </h4>
+          </h3>
 
           {!todaysAnalysis?.todaysTransactionsList || todaysAnalysis.todaysTransactionsList.length === 0 ? (
-            <div className="p-6 bg-white/5 border border-white/10 rounded-2xl text-center text-slate-400 text-xs font-semibold">
+            <div className="p-4 bg-[#111827] border border-[#303B4D] rounded-lg text-center text-xs text-[#9CA3AF]">
               No payments recorded today yet. Click &quot;Record New Payment Today&quot; to issue a receipt.
             </div>
           ) : (
-            <div className="overflow-x-auto border border-white/10 rounded-2xl">
+            <div className="overflow-x-auto border border-[#303B4D] rounded-lg">
               <table className="w-full text-left border-collapse text-xs">
-                <thead>
-                  <tr className="bg-white/10 text-slate-300 font-bold uppercase text-[10px]">
-                    <th className="py-2.5 px-4">Receipt No</th>
-                    <th className="py-2.5 px-4">Student Name</th>
-                    <th className="py-2.5 px-4">Class</th>
-                    <th className="py-2.5 px-4">Payment Mode</th>
-                    <th className="py-2.5 px-4 text-right">Amount Paid</th>
+                <thead className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] text-xs font-medium">
+                  <tr>
+                    <th className="py-2.5 px-3">Receipt No</th>
+                    <th className="py-2.5 px-3">Student Name</th>
+                    <th className="py-2.5 px-3">Class</th>
+                    <th className="py-2.5 px-3">Payment Mode</th>
+                    <th className="py-2.5 px-3 text-right">Amount Paid</th>
                   </tr>
                 </thead>
-                <tbody className="divide-y divide-white/5">
+                <tbody className="divide-y divide-[#303B4D] bg-[#111827]">
                   {todaysAnalysis.todaysTransactionsList.map((tx: any) => (
-                    <tr key={tx.id} className="hover:bg-white/5 transition-colors">
-                      <td className="py-2.5 px-4 font-mono font-bold text-blue-300">{tx.receiptNumber}</td>
-                      <td className="py-2.5 px-4 font-bold text-white">{tx.studentName}</td>
-                      <td className="py-2.5 px-4 font-semibold text-slate-300">{tx.className}</td>
-                      <td className="py-2.5 px-4">
-                        <span className="inline-block px-2.5 py-0.5 bg-emerald-500/20 text-emerald-300 border border-emerald-500/30 rounded-md font-bold uppercase text-[10px]">
-                          {tx.paymentMethod}
+                    <tr key={tx.id} className="hover:bg-gray-800/40 transition-colors">
+                      <td className="py-2.5 px-3 font-mono font-medium text-blue-400">{tx.receiptNumber}</td>
+                      <td className="py-2.5 px-3 font-medium text-[#F3F4F6]">{tx.studentName}</td>
+                      <td className="py-2.5 px-3 text-[#9CA3AF]">{tx.className}</td>
+                      <td className="py-2.5 px-3">
+                        <span className="inline-block px-2 py-0.5 bg-[#1F2937] text-[#9CA3AF] border border-[#303B4D] rounded text-[11px] font-medium capitalize">
+                          {formatMethodName(tx.paymentMethod || 'cash')}
                         </span>
                       </td>
-                      <td className="py-2.5 px-4 text-right font-mono font-extrabold text-emerald-400 text-sm">
+                      <td className="py-2.5 px-3 text-right font-mono font-semibold text-[#22C55E]">
                         ₹ {tx.amount.toLocaleString()}
                       </td>
                     </tr>
@@ -425,152 +348,170 @@ export const FeeDashboardPage: React.FC = () => {
         </div>
       </div>
 
-      {/* Class-Wise Collection Performance Grid */}
-      <div className="space-y-4">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-2 border-b border-slate-200 pb-3">
-          <div>
-            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              <Layers className="w-5 h-5 text-blue-600" />
-              <span>Class-Wise Fee Collection & Target Breakdown</span>
-            </h3>
-            <p className="text-xs text-slate-500">Real-time breakdown of fees collected vs outstanding balance per academic grade.</p>
+      {/* 4. Payment Method Distribution */}
+      <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 space-y-4">
+        <div className="flex items-center justify-between border-b border-[#303B4D] pb-3">
+          <div className="flex items-center gap-2">
+            <Receipt className="w-4 h-4 text-blue-400" />
+            <h3 className="font-semibold text-sm text-[#F3F4F6]">Payment Method Distribution</h3>
           </div>
+          {totalMethodAmount > 0 && (
+            <span className="text-xs text-[#9CA3AF]">Total Collection: ₹ {totalMethodAmount.toLocaleString()}</span>
+          )}
         </div>
 
-        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-5">
-          {classBreakdown.map((cb, idx) => {
-            const palette = getClassColorPalette(idx);
+        {methodEntries.length === 0 || totalMethodAmount === 0 ? (
+          <div className="p-8 text-center bg-[#111827] border border-[#303B4D] rounded-lg">
+            <Receipt className="w-6 h-6 mx-auto text-[#9CA3AF] mb-2" />
+            <p className="text-xs font-medium text-[#F3F4F6]">No payment method distribution data available</p>
+            <p className="text-[11px] text-[#9CA3AF] mt-0.5">Recorded transaction channels will automatically appear here.</p>
+          </div>
+        ) : (
+          <div className="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-3 gap-3">
+            {methodEntries.map(([method, data]: any) => {
+              const amount = data?.amount || 0;
+              const count = data?.count || 0;
+              const pct = totalMethodAmount > 0 ? Math.round((amount / totalMethodAmount) * 100) : 0;
 
-            return (
-              <div key={cb.classId} className={`bg-white rounded-2xl border ${palette.border} p-5 shadow-sm space-y-3 hover:shadow-md transition-all relative overflow-hidden`}>
-                <div className="flex items-center justify-between border-b border-slate-100 pb-2.5">
-                  <div className="flex items-center gap-3">
-                    {/* Display Picture Badge with JUST Number / Short Code */}
-                    <span className={`w-10 h-10 rounded-xl bg-gradient-to-br ${palette.bg} text-white font-extrabold text-sm flex items-center justify-center shadow-md shrink-0 font-mono`}>
-                      {getClassBadgeLabel(cb.className)}
-                    </span>
-                    <div>
-                      <h4 className="font-bold text-base text-slate-900">{cb.className}</h4>
-                      <span className="text-[10px] font-bold text-slate-500">{cb.studentCount} Students Enrolled</span>
-                    </div>
+              return (
+                <div key={method} className="p-3.5 rounded-lg bg-[#111827] border border-[#303B4D] flex flex-col justify-between">
+                  <div className="flex items-center justify-between">
+                    <span className="text-xs font-medium text-[#9CA3AF]">{formatMethodName(method)}</span>
+                    <span className="text-[11px] text-[#9CA3AF]">{count} transaction{count === 1 ? '' : 's'}</span>
                   </div>
-
-                  <span className={`px-3 py-1 rounded-full text-xs font-extrabold ${
-                    cb.collectionPercentage >= 80 ? 'bg-emerald-100 text-emerald-800' : cb.collectionPercentage >= 50 ? 'bg-amber-100 text-amber-800' : 'bg-red-100 text-red-800'
-                  }`}>
-                    {cb.collectionPercentage}%
-                  </span>
-                </div>
-
-                {/* Progress Bar */}
-                <div className="space-y-1">
-                  <div className="w-full h-2.5 bg-slate-100 rounded-full overflow-hidden p-0.5">
-                    <div 
-                      className={`h-full bg-gradient-to-r ${palette.bg} rounded-full transition-all duration-500`} 
-                      style={{ width: `${Math.min(100, cb.collectionPercentage)}%` }} 
-                    />
+                  <div className="mt-2 flex items-baseline justify-between">
+                    <span className="font-semibold text-lg text-[#F3F4F6] font-mono">₹ {amount.toLocaleString()}</span>
+                    <span className="text-xs font-medium text-blue-400">{pct}%</span>
+                  </div>
+                  <div className="w-full bg-[#1F2937] h-1.5 rounded-full overflow-hidden border border-[#303B4D] mt-2.5">
+                    <div className="bg-blue-600 h-full rounded-full transition-all duration-300" style={{ width: `${pct}%` }} />
                   </div>
                 </div>
-
-                {/* Financial Metrics */}
-                <div className="grid grid-cols-2 gap-2 text-xs pt-1">
-                  <div className="bg-emerald-50/60 p-2.5 rounded-xl border border-emerald-100">
-                    <span className="text-[10px] uppercase font-bold text-emerald-700 block">Collected</span>
-                    <span className="font-extrabold text-emerald-800 font-mono text-sm">₹ {cb.totalPaid.toLocaleString()}</span>
-                  </div>
-
-                  <div className="bg-amber-50/60 p-2.5 rounded-xl border border-amber-100">
-                    <span className="text-[10px] uppercase font-bold text-amber-700 block">Outstanding</span>
-                    <span className="font-extrabold text-amber-800 font-mono text-sm">₹ {cb.totalOutstanding.toLocaleString()}</span>
-                  </div>
-                </div>
-
-                {/* Defaulter Badge Footer */}
-                <div className="flex items-center justify-between text-[11px] pt-1">
-                  <span className="text-slate-600 font-semibold">
-                    Defaulters: <strong className="text-amber-700">{cb.defaultersCount}</strong>
-                  </span>
-
-                  <button
-                    onClick={() => {
-                      setSelectedClassFilter(cb.className);
-                      const el = document.getElementById('defaulters-section');
-                      el?.scrollIntoView({ behavior: 'smooth' });
-                    }}
-                    className={`${palette.text} hover:underline font-extrabold text-xs inline-flex items-center gap-1`}
-                  >
-                    <span>View Defaulters</span>
-                    <ArrowUpRight className="w-3.5 h-3.5" />
-                  </button>
-                </div>
-              </div>
-            );
-          })}
-        </div>
+              );
+            })}
+          </div>
+        )}
       </div>
 
-      {/* Payment Method Breakdown */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-6 shadow-xs space-y-4">
-        <div className="flex items-center gap-2 border-b border-slate-100 pb-3">
-          <Receipt className="w-5 h-5 text-blue-600" />
-          <h3 className="font-extrabold text-base text-slate-900">Payment Modes & Channel Volume</h3>
+      {/* 5. Class-Wise Fee Collection */}
+      <div className="space-y-3">
+        <div>
+          <h3 className="font-semibold text-sm text-[#F3F4F6] flex items-center gap-2">
+            <Layers className="w-4 h-4 text-blue-400" />
+            <span>Class-Wise Fee Collection</span>
+          </h3>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Breakdown of fees collected versus outstanding balances per academic grade.</p>
         </div>
 
-        <div className="grid grid-cols-1 sm:grid-cols-3 gap-4 text-xs">
-          {Object.entries(paymentMethodBreakdown).map(([method, data]: any) => (
-            <div key={method} className="p-4 rounded-2xl bg-slate-50 border border-slate-200 flex items-center justify-between shadow-xs">
-              <div>
-                <span className="uppercase font-extrabold text-slate-600 tracking-wider text-[11px] block">{method}</span>
-                <span className="font-extrabold text-lg text-slate-900 font-mono mt-1 block">₹ {data.amount.toLocaleString()}</span>
+        <div className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-3 gap-4">
+          {classBreakdown.map((cb) => (
+            <div key={cb.classId} className="bg-[#1F2937] rounded-lg border border-[#303B4D] p-4 space-y-3">
+              <div className="flex items-center justify-between border-b border-[#303B4D] pb-2.5">
+                <div className="flex items-center gap-2.5">
+                  <span className="w-7 h-7 rounded-md bg-[#111827] border border-[#303B4D] text-[#F3F4F6] text-xs font-semibold flex items-center justify-center shrink-0 font-mono">
+                    {getClassBadgeLabel(cb.className)}
+                  </span>
+                  <div>
+                    <h4 className="font-medium text-xs text-[#F3F4F6]">{cb.className}</h4>
+                    <span className="text-[10px] text-[#9CA3AF]">{cb.studentCount} students</span>
+                  </div>
+                </div>
+
+                <span className={`px-2 py-0.5 rounded text-[11px] font-medium ${
+                  cb.collectionPercentage >= 80 
+                    ? 'bg-emerald-950/40 text-[#22C55E] border border-emerald-800/40' 
+                    : cb.collectionPercentage >= 50 
+                    ? 'bg-amber-950/40 text-[#F59E0B] border border-amber-800/40' 
+                    : 'bg-red-950/40 text-[#EF4444] border border-red-800/40'
+                }`}>
+                  {cb.collectionPercentage}%
+                </span>
               </div>
-              <span className="px-3 py-1.5 bg-blue-50 border border-blue-200 text-blue-800 rounded-xl font-bold">
-                {data.count} Payments
-              </span>
+
+              {/* Progress Bar */}
+              <div className="w-full h-1.5 bg-[#111827] rounded-full overflow-hidden border border-[#303B4D]">
+                <div 
+                  className="h-full bg-blue-600 rounded-full transition-all duration-300" 
+                  style={{ width: `${Math.min(100, cb.collectionPercentage)}%` }} 
+                />
+              </div>
+
+              {/* Financial Metrics */}
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                <div className="bg-[#111827] p-2 rounded-md border border-[#303B4D]">
+                  <span className="text-[10px] font-medium text-[#9CA3AF] block">Collected</span>
+                  <span className="font-semibold text-[#22C55E] font-mono text-xs mt-0.5 block">₹ {cb.totalPaid.toLocaleString()}</span>
+                </div>
+
+                <div className="bg-[#111827] p-2 rounded-md border border-[#303B4D]">
+                  <span className="text-[10px] font-medium text-[#9CA3AF] block">Outstanding</span>
+                  <span className="font-semibold text-[#EF4444] font-mono text-xs mt-0.5 block">₹ {cb.totalOutstanding.toLocaleString()}</span>
+                </div>
+              </div>
+
+              {/* Footer */}
+              <div className="flex items-center justify-between text-xs pt-0.5">
+                <span className="text-[#9CA3AF]">
+                  Defaulters: <span className="text-[#F3F4F6] font-medium">{cb.defaultersCount}</span>
+                </span>
+
+                <button
+                  onClick={() => {
+                    setSelectedClassFilter(cb.className);
+                    const el = document.getElementById('defaulters-section');
+                    el?.scrollIntoView({ behavior: 'smooth' });
+                  }}
+                  className="text-xs font-medium text-blue-400 hover:text-blue-300 inline-flex items-center gap-1 transition-colors"
+                >
+                  <span>View Defaulters</span>
+                  <ArrowUpRight className="w-3 h-3" />
+                </button>
+              </div>
             </div>
           ))}
         </div>
       </div>
 
-      {/* Fee Defaulters Roster & Reminder Trigger Table */}
-      <div id="defaulters-section" className="bg-white rounded-2xl border border-slate-200 shadow-xs space-y-4 p-6">
-        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-4 border-b border-slate-100 pb-4">
+      {/* 6. Pending Fee Defaulters Roster */}
+      <div id="defaulters-section" className="bg-[#1F2937] rounded-lg border border-[#303B4D] space-y-4 p-5">
+        <div className="flex flex-col sm:flex-row items-start sm:items-center justify-between gap-3 border-b border-[#303B4D] pb-3">
           <div>
-            <h3 className="font-extrabold text-base text-slate-900 flex items-center gap-2">
-              <AlertCircle className="w-5 h-5 text-amber-600" />
+            <h3 className="font-semibold text-sm text-[#F3F4F6] flex items-center gap-2">
+              <AlertCircle className="w-4 h-4 text-amber-400" />
               <span>Pending Fee Defaulters ({filteredDefaulters.length})</span>
             </h3>
-            <p className="text-xs text-slate-500">Students with outstanding fee balances requiring parent payment reminder notifications.</p>
+            <p className="text-xs text-[#9CA3AF] mt-0.5">Students with outstanding fee balances requiring parent payment reminder notifications.</p>
           </div>
 
           <button
             onClick={handleSendBulkReminder}
             disabled={bulkSmsLoading || defaulters.length === 0}
-            className="flex items-center gap-2 px-4 py-2.5 bg-amber-600 hover:bg-amber-700 text-white font-bold text-xs rounded-xl shadow-md transition-all shrink-0"
+            className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors shrink-0"
           >
-            <Send className="w-4 h-4" />
-            <span>{bulkSmsLoading ? "Dispatched Reminders..." : "Send Bulk Fee SMS to Defaulters"}</span>
+            <Send className="w-3.5 h-3.5" />
+            <span>{bulkSmsLoading ? "Sending SMS Reminders..." : "Send Bulk Fee SMS to Defaulters"}</span>
           </button>
         </div>
 
         {/* Filter Controls */}
-        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-slate-50 p-3 rounded-xl border border-slate-200">
+        <div className="flex flex-col sm:flex-row items-center justify-between gap-3 bg-[#111827] p-2.5 rounded-lg border border-[#303B4D]">
           <div className="relative w-full sm:w-72">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-3 top-2.5" />
             <input
               type="text"
               value={searchDefaulter}
               onChange={(e) => setSearchDefaulter(e.target.value)}
-              placeholder="Search student or Reg No..."
-              className="w-full bg-white border border-slate-200 rounded-lg pl-9 pr-3 py-1.5 text-xs text-slate-900 focus:outline-none focus:border-blue-500"
+              placeholder="Search student, Reg No, or parent..."
+              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-md pl-8 pr-3 py-1.5 text-xs text-[#F3F4F6] placeholder-[#9CA3AF] focus:border-blue-500 focus:outline-none"
             />
           </div>
 
           <div className="flex items-center gap-2 w-full sm:w-auto">
-            <span className="text-xs font-semibold text-slate-500 uppercase tracking-wider">Class Filter:</span>
+            <span className="text-xs text-[#9CA3AF]">Class:</span>
             <select
               value={selectedClassFilter}
               onChange={(e) => setSelectedClassFilter(e.target.value)}
-              className="bg-white border border-slate-200 text-xs font-semibold rounded-lg px-3 py-1.5 text-slate-900 focus:outline-none"
+              className="bg-[#1F2937] border border-[#303B4D] text-xs text-[#F3F4F6] rounded-md px-3 py-1.5 focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="">All Defaulter Classes</option>
               {classBreakdown.map(c => (
@@ -581,54 +522,60 @@ export const FeeDashboardPage: React.FC = () => {
         </div>
 
         {/* Defaulters Table */}
-        <div className="overflow-x-auto border border-slate-200 rounded-xl">
+        <div className="overflow-x-auto border border-[#303B4D] rounded-lg">
           <table className="w-full text-left border-collapse text-xs">
-            <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
-                <th className="py-3 px-4">Reg No</th>
-                <th className="py-3 px-4">Student Name</th>
-                <th className="py-3 px-4">Class & Section</th>
-                <th className="py-3 px-4">Father / Parent</th>
-                <th className="py-3 px-4 text-right">Total Package</th>
-                <th className="py-3 px-4 text-right">Amount Paid</th>
-                <th className="py-3 px-4 text-right">Pending Balance</th>
-                <th className="py-3 px-4 text-center">SMS Reminder Action</th>
+            <thead className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] font-medium text-xs">
+              <tr>
+                <th className="py-2.5 px-3">Reg No</th>
+                <th className="py-2.5 px-3">Student Name</th>
+                <th className="py-2.5 px-3">Class & Section</th>
+                <th className="py-2.5 px-3">Parent / Contact</th>
+                <th className="py-2.5 px-3 text-right">Total Package</th>
+                <th className="py-2.5 px-3 text-right">Amount Paid</th>
+                <th className="py-2.5 px-3 text-right">Pending Balance</th>
+                <th className="py-2.5 px-3 text-center">SMS Reminder Action</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#303B4D] bg-[#111827]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400">Loading defaulters...</td>
+                  <td colSpan={8} className="py-8 text-center text-xs text-[#9CA3AF]">Loading fee records...</td>
                 </tr>
               ) : filteredDefaulters.length === 0 ? (
                 <tr>
-                  <td colSpan={8} className="py-8 text-center text-slate-400">
-                    🎉 Excellent! No pending fee defaulters found matching filters.
+                  <td colSpan={8} className="py-10 text-center">
+                    <CheckCircle2 className="w-6 h-6 mx-auto text-[#22C55E] mb-2" />
+                    <p className="text-xs font-medium text-[#F3F4F6]">No pending fee records found.</p>
+                    <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                      {searchDefaulter || selectedClassFilter 
+                        ? "No records match the active search and filter criteria." 
+                        : "All students are up to date with their fee payments."}
+                    </p>
                   </td>
                 </tr>
               ) : (
                 filteredDefaulters.map((st) => (
-                  <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3 px-4 font-mono font-bold text-blue-600">{st.registrationNumber}</td>
-                    <td className="py-3 px-4 font-bold text-slate-900">{st.fullName}</td>
-                    <td className="py-3 px-4 font-semibold text-slate-700">{st.className} - {st.sectionName}</td>
-                    <td className="py-3 px-4 text-slate-700">
+                  <tr key={st.id} className="hover:bg-gray-800/40 transition-colors">
+                    <td className="py-2.5 px-3 font-mono font-medium text-blue-400">{st.registrationNumber}</td>
+                    <td className="py-2.5 px-3 font-medium text-[#F3F4F6]">{st.fullName}</td>
+                    <td className="py-2.5 px-3 text-[#9CA3AF]">{st.className} - {st.sectionName}</td>
+                    <td className="py-2.5 px-3 text-[#9CA3AF]">
                       <div>
-                        <p className="font-semibold text-slate-900">{st.fatherName}</p>
-                        <p className="text-[10px] font-mono text-slate-500">{st.fatherPhone}</p>
+                        <p className="font-medium text-[#F3F4F6]">{st.fatherName}</p>
+                        <p className="text-[10px] font-mono text-[#9CA3AF]">{st.fatherPhone}</p>
                       </div>
                     </td>
-                    <td className="py-3 px-4 text-right font-mono text-slate-600">₹ {st.totalDue.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right font-mono font-semibold text-emerald-700">₹ {st.amountPaid.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-right font-mono font-extrabold text-amber-700">₹ {st.balance.toLocaleString()}</td>
-                    <td className="py-3 px-4 text-center">
+                    <td className="py-2.5 px-3 text-right font-mono text-[#9CA3AF]">₹ {st.totalDue.toLocaleString()}</td>
+                    <td className="py-2.5 px-3 text-right font-mono font-medium text-[#22C55E]">₹ {st.amountPaid.toLocaleString()}</td>
+                    <td className="py-2.5 px-3 text-right font-mono font-semibold text-[#EF4444]">₹ {st.balance.toLocaleString()}</td>
+                    <td className="py-2.5 px-3 text-center">
                       <button
                         onClick={() => handleSendSingleReminder(st)}
                         disabled={sendingSmsId === st.id}
-                        className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-amber-50 hover:bg-amber-100 text-amber-800 font-bold text-[11px] rounded-lg border border-amber-200 transition-colors"
+                        className="inline-flex items-center gap-1.5 px-2.5 py-1 bg-[#1F2937] hover:bg-gray-700 text-blue-400 font-medium text-xs rounded-md border border-[#303B4D] transition-colors"
                       >
-                        <MessageSquare className="w-3.5 h-3.5 text-amber-600" />
-                        <span>{sendingSmsId === st.id ? "Sending..." : "Send Reminder SMS"}</span>
+                        <MessageSquare className="w-3 h-3 text-blue-400" />
+                        <span>{sendingSmsId === st.id ? "Sending..." : "Send Reminder"}</span>
                       </button>
                     </td>
                   </tr>
@@ -641,3 +588,5 @@ export const FeeDashboardPage: React.FC = () => {
     </div>
   );
 };
+
+export default FeeDashboardPage;
