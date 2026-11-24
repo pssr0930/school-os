@@ -1,6 +1,15 @@
 import React, { useState, useEffect } from 'react';
 import api from '../../services/api';
-import { Calendar, CheckCircle2, XCircle, Clock, Send, Save, CheckCheck, XSquare } from 'lucide-react';
+import { 
+  CheckCircle2, 
+  XCircle, 
+  Clock, 
+  Send, 
+  Save, 
+  CheckCheck, 
+  XSquare,
+  Users
+} from 'lucide-react';
 
 export const AttendancePage: React.FC = () => {
   const [classes, setClasses] = useState<any[]>([]);
@@ -11,6 +20,7 @@ export const AttendancePage: React.FC = () => {
   
   const [studentsAttendance, setStudentsAttendance] = useState<any[]>([]);
   const [isLoading, setIsLoading] = useState(false);
+  const [isSaving, setIsSaving] = useState(false);
   const [saveSuccess, setSaveSuccess] = useState('');
   const [smsResult, setSmsResult] = useState('');
 
@@ -22,7 +32,7 @@ export const AttendancePage: React.FC = () => {
           setSelectedClass(res.data.data[0].id);
         }
       }
-    });
+    }).catch(err => console.error('Failed to load classes', err));
   }, []);
 
   useEffect(() => {
@@ -31,7 +41,9 @@ export const AttendancePage: React.FC = () => {
         if (res.data.success) {
           setSections(res.data.data);
         }
-      });
+      }).catch(err => console.error('Failed to load sections', err));
+    } else {
+      setSections([]);
     }
   }, [selectedClass]);
 
@@ -44,7 +56,7 @@ export const AttendancePage: React.FC = () => {
         setStudentsAttendance(res.data.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to load attendance list', err);
     } finally {
       setIsLoading(false);
     }
@@ -65,6 +77,7 @@ export const AttendancePage: React.FC = () => {
   };
 
   const handleSaveAttendance = async () => {
+    setIsSaving(true);
     try {
       const records = studentsAttendance.map(st => ({
         studentId: st.studentId,
@@ -79,11 +92,13 @@ export const AttendancePage: React.FC = () => {
       });
 
       if (res.data.success) {
-        setSaveSuccess('🎉 Attendance saved successfully!');
+        setSaveSuccess('Attendance saved successfully!');
         setTimeout(() => setSaveSuccess(''), 3000);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to save attendance', err);
+    } finally {
+      setIsSaving(false);
     }
   };
 
@@ -97,138 +112,177 @@ export const AttendancePage: React.FC = () => {
         setTimeout(() => setSmsResult(''), 4000);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to send absence notifications', err);
     }
   };
 
   const presentCount = studentsAttendance.filter(s => s.status === 'present').length;
   const absentCount = studentsAttendance.filter(s => s.status === 'absent').length;
+  const lateCount = studentsAttendance.filter(s => s.status === 'late').length;
 
   return (
-    <div className="space-y-3 pb-20 md:pb-6">
+    <div className="w-full max-w-7xl mx-auto space-y-6 pb-20 md:pb-6 text-[#F3F4F6]">
+      {/* 1. Page Header & Live Summary */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#F3F4F6] tracking-tight">Attendance</h1>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Mark daily student attendance, review class status, and send absence alerts.</p>
+        </div>
+
+        <div className="flex items-center gap-2.5">
+          <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1F2937] border border-[#303B4D] text-xs">
+            <span className="text-[#9CA3AF]">Roster:</span>
+            <span className="font-mono font-medium text-[#F3F4F6] tabular-nums">{studentsAttendance.length}</span>
+            <span className="text-[#303B4D]">|</span>
+            <span className="text-[#22C55E] font-medium font-mono tabular-nums">P: {presentCount}</span>
+            <span className="text-[#303B4D]">|</span>
+            <span className="text-[#EF4444] font-medium font-mono tabular-nums">A: {absentCount}</span>
+            {lateCount > 0 && (
+              <>
+                <span className="text-[#303B4D]">|</span>
+                <span className="text-[#F59E0B] font-medium font-mono tabular-nums">L: {lateCount}</span>
+              </>
+            )}
+          </div>
+        </div>
+      </div>
+
+      {/* Notifications */}
       {saveSuccess && (
-        <div className="p-3 rounded-xl bg-emerald-500/10 border border-emerald-500/20 text-emerald-700 text-xs font-bold flex items-center gap-2">
-          <CheckCircle2 className="w-4 h-4 text-emerald-600" />
+        <div className="p-3 rounded-lg bg-emerald-950/40 border border-emerald-800/40 text-[#22C55E] text-xs font-medium flex items-center gap-2">
+          <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0" />
           <span>{saveSuccess}</span>
         </div>
       )}
 
       {smsResult && (
-        <div className="p-3 rounded-xl bg-blue-500/10 border border-blue-500/20 text-blue-700 text-xs font-bold flex items-center gap-2">
-          <Send className="w-4 h-4 text-blue-600" />
+        <div className="p-3 rounded-lg bg-blue-950/40 border border-blue-800/40 text-blue-400 text-xs font-medium flex items-center gap-2">
+          <Send className="w-4 h-4 text-blue-400 shrink-0" />
           <span>{smsResult}</span>
         </div>
       )}
 
-      {/* Selectors Bar */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-3 sm:p-4 shadow-xs flex flex-wrap items-center justify-between gap-3">
-        <div className="flex items-center gap-2 sm:gap-3 flex-wrap w-full sm:w-auto">
-          <div className="flex-1 sm:flex-none">
-            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Class</label>
+      {/* 2. Filter & Bulk Action Toolbar */}
+      <div className="bg-[#1F2937] rounded-lg border border-[#303B4D] p-4 flex flex-wrap items-end justify-between gap-4">
+        {/* Left: Class, Section, Date Selectors */}
+        <div className="flex items-end gap-3 flex-wrap w-full lg:w-auto">
+          {/* Class Dropdown */}
+          <div className="flex-1 sm:flex-none min-w-[140px]">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">Class</label>
             <select
               value={selectedClass}
               onChange={(e) => { setSelectedClass(e.target.value); setSelectedSection(''); }}
-              className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id} className="bg-[#1F2937] text-[#F3F4F6]">{c.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="flex-1 sm:flex-none">
-            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Section</label>
+          {/* Section Dropdown */}
+          <div className="flex-1 sm:flex-none min-w-[120px]">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">Section</label>
             <select
               value={selectedSection}
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
-              <option value="">All Sec</option>
+              <option value="" className="bg-[#1F2937] text-[#F3F4F6]">All Sec</option>
               {sections.map(s => (
-                <option key={s.id} value={s.id}>Sec {s.name}</option>
+                <option key={s.id} value={s.id} className="bg-[#1F2937] text-[#F3F4F6]">Sec {s.name}</option>
               ))}
             </select>
           </div>
 
-          <div className="w-full sm:w-auto">
-            <label className="block text-[9px] font-bold text-slate-400 uppercase mb-0.5">Date</label>
+          {/* Date Picker */}
+          <div className="w-full sm:w-auto min-w-[140px]">
+            <label className="block text-xs font-medium text-[#9CA3AF] mb-1.5">Date</label>
             <input
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-auto bg-slate-50 border border-slate-200 rounded-xl px-2.5 py-1.5 text-xs font-bold text-slate-800 focus:outline-none"
+              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer tabular-nums"
             />
           </div>
         </div>
 
-        {/* Quick Batch Toggles & SMS Button */}
-        <div className="flex items-center gap-2 w-full sm:w-auto justify-end pt-1 sm:pt-0">
+        {/* Right: Quick Batch Actions & SMS Trigger */}
+        <div className="flex items-center gap-2.5 w-full lg:w-auto justify-end flex-wrap pt-2 lg:pt-0">
           <button
+            type="button"
             onClick={() => handleMarkAll('present')}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 bg-emerald-50 text-emerald-700 border border-emerald-200 hover:bg-emerald-100 font-bold text-[11px] rounded-xl transition-colors active:scale-95"
+            disabled={studentsAttendance.length === 0}
+            className="flex-1 sm:flex-none h-9 px-3.5 bg-emerald-950/40 hover:bg-emerald-900/50 disabled:opacity-40 text-[#22C55E] border border-emerald-800/50 font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5"
           >
             <CheckCheck className="w-3.5 h-3.5" />
             <span>Mark All Present</span>
           </button>
 
           <button
+            type="button"
             onClick={() => handleMarkAll('absent')}
-            className="flex-1 sm:flex-none flex items-center justify-center gap-1 px-2.5 py-1.5 bg-red-50 text-red-700 border border-red-200 hover:bg-red-100 font-bold text-[11px] rounded-xl transition-colors active:scale-95"
+            disabled={studentsAttendance.length === 0}
+            className="flex-1 sm:flex-none h-9 px-3.5 bg-red-950/40 hover:bg-red-900/50 disabled:opacity-40 text-[#EF4444] border border-red-800/50 font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5"
           >
             <XSquare className="w-3.5 h-3.5" />
             <span>Mark All Absent</span>
           </button>
 
           <button
+            type="button"
             onClick={handleTriggerAbsenceSms}
-            title="Send parent absence SMS"
-            className="flex items-center justify-center gap-1 px-2.5 py-1.5 bg-amber-500 hover:bg-amber-600 text-white font-bold text-[11px] rounded-xl shadow-xs transition-colors active:scale-95 shrink-0"
+            disabled={absentCount === 0}
+            title="Send parent absence SMS notifications"
+            className="flex-1 sm:flex-none h-9 px-3.5 bg-amber-950/40 hover:bg-amber-900/50 disabled:opacity-40 text-[#F59E0B] border border-amber-800/50 font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0"
           >
             <Send className="w-3.5 h-3.5" />
-            <span className="hidden sm:inline">Absence SMS</span>
+            <span>Absence SMS</span>
           </button>
         </div>
       </div>
 
-      {/* ULTRA-COMPACT MOBILE ATTENDANCE LIST VIEW (< 768px) */}
-      <div className="block md:hidden bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
-        <div className="p-3 bg-slate-50 border-b border-slate-200 flex items-center justify-between text-[11px] font-bold text-slate-500 uppercase tracking-wider">
-          <span>Student (Reg No • Sec)</span>
-          <span className="flex items-center gap-2">
-            <span className="text-emerald-700 font-black">P: {presentCount}</span>
-            <span>•</span>
-            <span className="text-red-700 font-black">A: {absentCount}</span>
-          </span>
+      {/* 3. MOBILE ATTENDANCE LIST VIEW (< 768px) */}
+      <div className="block md:hidden bg-[#1F2937] rounded-lg border border-[#303B4D] overflow-hidden">
+        <div className="p-3 bg-[#243244] border-b border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
+          <span className="font-medium">Student (Reg No • Sec)</span>
+          <div className="flex items-center gap-2 font-mono text-xs">
+            <span className="text-[#22C55E] font-medium">P: {presentCount}</span>
+            <span className="text-[#303B4D]">•</span>
+            <span className="text-[#EF4444] font-medium">A: {absentCount}</span>
+          </div>
         </div>
 
-        <div className="divide-y divide-slate-100 max-h-[60vh] overflow-y-auto">
+        <div className="divide-y divide-[#303B4D] bg-[#111827] max-h-[60vh] overflow-y-auto">
           {isLoading ? (
-            <div className="p-6 text-center text-slate-400 text-xs font-semibold">Loading student roster...</div>
+            <div className="p-6 text-center text-[#9CA3AF] text-xs">Loading student roster...</div>
           ) : studentsAttendance.length === 0 ? (
-            <div className="p-6 text-center text-slate-400 text-xs font-semibold">No students enrolled in this section.</div>
+            <div className="p-8 text-center text-[#9CA3AF] text-xs space-y-1">
+              <Users className="w-6 h-6 mx-auto mb-2 text-[#9CA3AF]" />
+              <p className="font-medium text-[#F3F4F6]">No students found for this class and section.</p>
+              <p className="text-[11px] text-[#9CA3AF]">Select another class or section above.</p>
+            </div>
           ) : (
             studentsAttendance.map((st) => (
-              <div key={st.studentId} className="p-2.5 flex items-center justify-between gap-2 hover:bg-slate-50/80 transition-colors">
+              <div key={st.studentId} className="p-3 flex items-center justify-between gap-3 hover:bg-[#1F2937]/60 transition-colors">
                 <div className="min-w-0 flex-1">
-                  <div className="flex items-center gap-1.5">
-                    <span className="font-extrabold text-xs text-slate-900 truncate">{st.fullName}</span>
-                  </div>
-                  <div className="flex items-center gap-1.5 text-[10px] text-slate-500 font-mono font-bold mt-0.5">
-                    <span className="text-blue-600">{st.registrationNumber}</span>
+                  <span className="font-medium text-xs text-[#F3F4F6] truncate block">{st.fullName}</span>
+                  <div className="flex items-center gap-1.5 text-[10px] text-[#9CA3AF] font-mono mt-0.5 tabular-nums">
+                    <span className="text-blue-400">{st.registrationNumber}</span>
                     <span>•</span>
                     <span>Sec {st.sectionName}</span>
                   </div>
                 </div>
 
-                {/* Compact Touch Toggles: [P] [A] [L] */}
-                <div className="flex items-center gap-1 shrink-0">
+                {/* Compact Mobile Segmented Control: [P] [A] [L] */}
+                <div className="inline-flex items-center p-0.5 rounded-lg bg-[#243244] border border-[#303B4D] shrink-0">
                   <button
                     type="button"
                     onClick={() => handleStatusToggle(st.studentId, 'present')}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    className={`w-7 h-7 rounded text-xs font-semibold flex items-center justify-center transition-colors ${
                       st.status === 'present'
-                        ? 'bg-emerald-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        ? 'bg-emerald-950/60 text-[#22C55E] border border-emerald-800/60'
+                        : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
                     }`}
                   >
                     P
@@ -237,10 +291,10 @@ export const AttendancePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleStatusToggle(st.studentId, 'absent')}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    className={`w-7 h-7 rounded text-xs font-semibold flex items-center justify-center transition-colors ${
                       st.status === 'absent'
-                        ? 'bg-red-600 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        ? 'bg-red-950/60 text-[#EF4444] border border-red-800/60'
+                        : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
                     }`}
                   >
                     A
@@ -249,10 +303,10 @@ export const AttendancePage: React.FC = () => {
                   <button
                     type="button"
                     onClick={() => handleStatusToggle(st.studentId, 'late')}
-                    className={`px-2.5 py-1.5 rounded-lg text-xs font-black transition-all ${
+                    className={`w-7 h-7 rounded text-xs font-semibold flex items-center justify-center transition-colors ${
                       st.status === 'late'
-                        ? 'bg-amber-500 text-white shadow-xs'
-                        : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                        ? 'bg-amber-950/60 text-[#F59E0B] border border-amber-800/60'
+                        : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
                     }`}
                   >
                     L
@@ -264,42 +318,63 @@ export const AttendancePage: React.FC = () => {
         </div>
       </div>
 
-      {/* DESKTOP ATTENDANCE TABLE (>= 768px) */}
-      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      {/* 4. DESKTOP ATTENDANCE TABLE (>= 768px) */}
+      <div className="hidden md:block bg-[#1F2937] rounded-lg border border-[#303B4D] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[11px]">
-                <th className="py-3 px-6">Reg No</th>
-                <th className="py-3 px-6">Student Name</th>
-                <th className="py-3 px-6">Section</th>
-                <th className="py-3 px-6 text-center">Status Toggle</th>
+              <tr className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] font-medium text-xs">
+                <th className="py-2.5 px-5">Reg No</th>
+                <th className="py-2.5 px-5">Student Name</th>
+                <th className="py-2.5 px-5">Section</th>
+                <th className="py-2.5 px-5 text-center">Status Toggle</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#303B4D] bg-[#111827]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-400">Loading student attendance list...</td>
+                  <td colSpan={4} className="py-10 text-center text-xs text-[#9CA3AF]">
+                    Loading student attendance roster...
+                  </td>
                 </tr>
               ) : studentsAttendance.length === 0 ? (
                 <tr>
-                  <td colSpan={4} className="py-8 text-center text-slate-400">No active students found in this class section.</td>
+                  <td colSpan={4} className="py-12 text-center text-xs">
+                    <Users className="w-6 h-6 mx-auto mb-2 text-[#9CA3AF]" />
+                    <p className="font-medium text-[#F3F4F6]">No students found for this class and section.</p>
+                    <p className="text-[11px] text-[#9CA3AF] mt-0.5">Please choose another class or section above.</p>
+                  </td>
                 </tr>
               ) : (
                 studentsAttendance.map((st) => (
-                  <tr key={st.studentId} className="hover:bg-slate-50/80 transition-colors">
-                    <td className="py-3.5 px-6 font-mono font-bold text-blue-600">{st.registrationNumber}</td>
-                    <td className="py-3.5 px-6 font-bold text-slate-900">{st.fullName}</td>
-                    <td className="py-3.5 px-6 font-semibold text-slate-700">Section {st.sectionName}</td>
-                    <td className="py-3.5 px-6">
-                      <div className="flex items-center justify-center gap-2">
+                  <tr key={st.studentId} className="hover:bg-[#1F2937]/80 transition-colors">
+                    {/* Reg No */}
+                    <td className="py-2.5 px-5 font-mono font-medium text-blue-400 tabular-nums">
+                      {st.registrationNumber}
+                    </td>
+
+                    {/* Student Name */}
+                    <td className="py-2.5 px-5 font-medium text-[#F3F4F6]">
+                      {st.fullName}
+                    </td>
+
+                    {/* Section */}
+                    <td className="py-2.5 px-5">
+                      <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-[#243244] text-[#F3F4F6] border border-[#303B4D]">
+                        Section {st.sectionName}
+                      </span>
+                    </td>
+
+                    {/* Status Toggle Segmented Control */}
+                    <td className="py-2.5 px-5 text-center">
+                      <div className="inline-flex items-center p-0.5 rounded-lg bg-[#243244] border border-[#303B4D]">
                         <button
                           type="button"
                           onClick={() => handleStatusToggle(st.studentId, 'present')}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition-all ${
+                          className={`px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
                             st.status === 'present'
-                              ? 'bg-emerald-600 text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                              ? 'bg-emerald-950/60 text-[#22C55E] border border-emerald-800/60 shadow-xs'
+                              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
                           }`}
                         >
                           <CheckCircle2 className="w-3.5 h-3.5" />
@@ -309,10 +384,10 @@ export const AttendancePage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleStatusToggle(st.studentId, 'absent')}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition-all ${
+                          className={`px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
                             st.status === 'absent'
-                              ? 'bg-red-600 text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                              ? 'bg-red-950/60 text-[#EF4444] border border-red-800/60 shadow-xs'
+                              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
                           }`}
                         >
                           <XCircle className="w-3.5 h-3.5" />
@@ -322,10 +397,10 @@ export const AttendancePage: React.FC = () => {
                         <button
                           type="button"
                           onClick={() => handleStatusToggle(st.studentId, 'late')}
-                          className={`px-3 py-1.5 rounded-xl font-bold text-xs flex items-center gap-1 transition-all ${
+                          className={`px-3 py-1 rounded-md text-xs font-medium flex items-center gap-1.5 transition-colors ${
                             st.status === 'late'
-                              ? 'bg-amber-500 text-white shadow-xs'
-                              : 'bg-slate-100 text-slate-500 hover:bg-slate-200'
+                              ? 'bg-amber-950/60 text-[#F59E0B] border border-amber-800/60 shadow-xs'
+                              : 'text-[#9CA3AF] hover:text-[#F3F4F6]'
                           }`}
                         >
                           <Clock className="w-3.5 h-3.5" />
@@ -339,24 +414,42 @@ export const AttendancePage: React.FC = () => {
             </tbody>
           </table>
         </div>
+
+        {/* Table Footer Summary & Desktop Save Button */}
+        <div className="p-3.5 bg-[#243244] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
+          <div>
+            <span>Roster: <strong className="text-[#F3F4F6] font-medium">{studentsAttendance.length}</strong> students enrolled</span>
+          </div>
+
+          <button
+            onClick={handleSaveAttendance}
+            disabled={studentsAttendance.length === 0 || isSaving}
+            className="flex items-center gap-2 px-5 py-2 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors"
+          >
+            <Save className="w-3.5 h-3.5" />
+            <span>{isSaving ? 'Saving...' : 'Save Class Attendance'}</span>
+          </button>
+        </div>
       </div>
 
-      {/* STICKY FLOATING BOTTOM "SAVE CLASS ATTENDANCE" BAR */}
-      <div className="fixed md:relative bottom-0 left-0 right-0 z-40 bg-white/95 backdrop-blur-md md:bg-transparent border-t md:border-none border-slate-200 p-3 md:p-0 shadow-lg md:shadow-none flex items-center justify-between gap-3">
-        <div className="block md:hidden text-xs">
-          <span className="text-slate-500 font-bold block text-[10px] uppercase">Roster Total</span>
-          <span className="font-extrabold text-slate-900">{studentsAttendance.length} Enrolled</span>
+      {/* 5. Mobile Fixed Bottom Save Bar */}
+      <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 bg-[#1F2937]/95 backdrop-blur-md border-t border-[#303B4D] p-3 flex items-center justify-between gap-3">
+        <div className="text-xs">
+          <span className="text-[#9CA3AF] text-[10px] block">Roster</span>
+          <span className="font-medium text-[#F3F4F6]">{studentsAttendance.length} Students</span>
         </div>
 
         <button
           onClick={handleSaveAttendance}
-          disabled={studentsAttendance.length === 0}
-          className="w-full md:w-auto ml-auto flex items-center justify-center gap-2 px-6 py-3 bg-blue-600 hover:bg-blue-700 text-white font-extrabold text-xs rounded-xl shadow-lg shadow-blue-600/30 transition-all active:scale-95"
+          disabled={studentsAttendance.length === 0 || isSaving}
+          className="flex-1 flex items-center justify-center gap-2 px-4 py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors"
         >
-          <Save className="w-4 h-4" />
-          <span>Save Class Attendance</span>
+          <Save className="w-3.5 h-3.5" />
+          <span>{isSaving ? 'Saving...' : 'Save Class Attendance'}</span>
         </button>
       </div>
     </div>
   );
 };
+
+export default AttendancePage;
