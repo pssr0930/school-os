@@ -130,6 +130,7 @@ export const AttendancePage: React.FC = () => {
         </div>
 
         <div className="flex items-center gap-2.5">
+          {/* Header Summary Pill: Roster: X | P: X | A: X | L: X */}
           <div className="flex items-center gap-2 px-3 py-1.5 rounded-lg bg-[#1F2937] border border-[#303B4D] text-xs">
             <span className="text-[#9CA3AF]">Roster:</span>
             <span className="font-mono font-medium text-[#F3F4F6] tabular-nums">{studentsAttendance.length}</span>
@@ -137,12 +138,8 @@ export const AttendancePage: React.FC = () => {
             <span className="text-[#22C55E] font-medium font-mono tabular-nums">P: {presentCount}</span>
             <span className="text-[#303B4D]">|</span>
             <span className="text-[#EF4444] font-medium font-mono tabular-nums">A: {absentCount}</span>
-            {lateCount > 0 && (
-              <>
-                <span className="text-[#303B4D]">|</span>
-                <span className="text-[#F59E0B] font-medium font-mono tabular-nums">L: {lateCount}</span>
-              </>
-            )}
+            <span className="text-[#303B4D]">|</span>
+            <span className="text-[#F59E0B] font-medium font-mono tabular-nums">L: {lateCount}</span>
           </div>
         </div>
       </div>
@@ -172,7 +169,7 @@ export const AttendancePage: React.FC = () => {
             <select
               value={selectedClass}
               onChange={(e) => { setSelectedClass(e.target.value); setSelectedSection(''); }}
-              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-3 pr-8 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               {classes.map(c => (
                 <option key={c.id} value={c.id} className="bg-[#1F2937] text-[#F3F4F6]">{c.name}</option>
@@ -186,7 +183,7 @@ export const AttendancePage: React.FC = () => {
             <select
               value={selectedSection}
               onChange={(e) => setSelectedSection(e.target.value)}
-              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-3 pr-8 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="" className="bg-[#1F2937] text-[#F3F4F6]">All Sec</option>
               {sections.map(s => (
@@ -202,13 +199,14 @@ export const AttendancePage: React.FC = () => {
               type="date"
               value={selectedDate}
               onChange={(e) => setSelectedDate(e.target.value)}
-              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer tabular-nums"
+              style={{ colorScheme: 'dark' }}
+              className="w-full sm:w-auto h-9 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer tabular-nums [color-scheme:dark]"
             />
           </div>
         </div>
 
         {/* Right: Quick Batch Actions & SMS Trigger */}
-        <div className="flex items-center gap-2.5 w-full lg:w-auto justify-end flex-wrap pt-2 lg:pt-0">
+        <div className="flex items-end gap-2.5 w-full lg:w-auto justify-end flex-wrap pt-2 lg:pt-0">
           <button
             type="button"
             onClick={() => handleMarkAll('present')}
@@ -233,8 +231,8 @@ export const AttendancePage: React.FC = () => {
             type="button"
             onClick={handleTriggerAbsenceSms}
             disabled={absentCount === 0}
-            title="Send parent absence SMS notifications"
-            className="flex-1 sm:flex-none h-9 px-3.5 bg-amber-950/40 hover:bg-amber-900/50 disabled:opacity-40 text-[#F59E0B] border border-amber-800/50 font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0"
+            title={absentCount === 0 ? "No absent students to notify" : "Send parent absence SMS notifications"}
+            className="flex-1 sm:flex-none h-9 px-3.5 bg-amber-500/10 hover:bg-amber-500/20 text-amber-400 border border-amber-500/30 disabled:opacity-50 disabled:cursor-not-allowed font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-1.5 shrink-0"
           >
             <Send className="w-3.5 h-3.5" />
             <span>Absence SMS</span>
@@ -250,10 +248,12 @@ export const AttendancePage: React.FC = () => {
             <span className="text-[#22C55E] font-medium">P: {presentCount}</span>
             <span className="text-[#303B4D]">•</span>
             <span className="text-[#EF4444] font-medium">A: {absentCount}</span>
+            <span className="text-[#303B4D]">•</span>
+            <span className="text-[#F59E0B] font-medium">L: {lateCount}</span>
           </div>
         </div>
 
-        <div className="divide-y divide-[#303B4D] bg-[#111827] max-h-[60vh] overflow-y-auto">
+        <div className="divide-y divide-[#303B4D] bg-[#1F2937] max-h-[60vh] overflow-y-auto">
           {isLoading ? (
             <div className="p-6 text-center text-[#9CA3AF] text-xs">Loading student roster...</div>
           ) : studentsAttendance.length === 0 ? (
@@ -264,7 +264,7 @@ export const AttendancePage: React.FC = () => {
             </div>
           ) : (
             studentsAttendance.map((st) => (
-              <div key={st.studentId} className="p-3 flex items-center justify-between gap-3 hover:bg-[#1F2937]/60 transition-colors">
+              <div key={st.studentId} className="p-3 flex items-center justify-between gap-3 hover:bg-[#243244]/60 transition-colors">
                 <div className="min-w-0 flex-1">
                   <span className="font-medium text-xs text-[#F3F4F6] truncate block">{st.fullName}</span>
                   <div className="flex items-center gap-1.5 text-[10px] text-[#9CA3AF] font-mono mt-0.5 tabular-nums">
@@ -324,13 +324,13 @@ export const AttendancePage: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] font-medium text-xs">
-                <th className="py-2.5 px-5">Reg No</th>
+                <th className="py-2.5 px-5 w-44">Reg No</th>
                 <th className="py-2.5 px-5">Student Name</th>
-                <th className="py-2.5 px-5">Section</th>
-                <th className="py-2.5 px-5 text-center">Status Toggle</th>
+                <th className="py-2.5 px-5 w-36">Section</th>
+                <th className="py-2.5 px-5 text-right w-72">Status Toggle</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#303B4D] bg-[#111827]">
+            <tbody className="divide-y divide-[#303B4D] bg-[#1F2937]">
               {isLoading ? (
                 <tr>
                   <td colSpan={4} className="py-10 text-center text-xs text-[#9CA3AF]">
@@ -347,7 +347,7 @@ export const AttendancePage: React.FC = () => {
                 </tr>
               ) : (
                 studentsAttendance.map((st) => (
-                  <tr key={st.studentId} className="hover:bg-[#1F2937]/80 transition-colors">
+                  <tr key={st.studentId} className="hover:bg-[#243244]/60 transition-colors">
                     {/* Reg No */}
                     <td className="py-2.5 px-5 font-mono font-medium text-blue-400 tabular-nums">
                       {st.registrationNumber}
@@ -365,8 +365,8 @@ export const AttendancePage: React.FC = () => {
                       </span>
                     </td>
 
-                    {/* Status Toggle Segmented Control */}
-                    <td className="py-2.5 px-5 text-center">
+                    {/* Status Toggle Segmented Control (Right-Aligned) */}
+                    <td className="py-2.5 px-5 text-right">
                       <div className="inline-flex items-center p-0.5 rounded-lg bg-[#243244] border border-[#303B4D]">
                         <button
                           type="button"
@@ -416,9 +416,9 @@ export const AttendancePage: React.FC = () => {
         </div>
 
         {/* Table Footer Summary & Desktop Save Button */}
-        <div className="p-3.5 bg-[#243244] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
+        <div className="p-3.5 bg-[#1F2937] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
           <div>
-            <span>Roster: <strong className="text-[#F3F4F6] font-medium">{studentsAttendance.length}</strong> students enrolled</span>
+            <span>Roster: <strong className="text-[#F3F4F6] font-medium">{studentsAttendance.length}</strong> {studentsAttendance.length === 1 ? 'student' : 'students'} enrolled</span>
           </div>
 
           <button
@@ -436,7 +436,7 @@ export const AttendancePage: React.FC = () => {
       <div className="fixed md:hidden bottom-0 left-0 right-0 z-40 bg-[#1F2937]/95 backdrop-blur-md border-t border-[#303B4D] p-3 flex items-center justify-between gap-3">
         <div className="text-xs">
           <span className="text-[#9CA3AF] text-[10px] block">Roster</span>
-          <span className="font-medium text-[#F3F4F6]">{studentsAttendance.length} Students</span>
+          <span className="font-medium text-[#F3F4F6]">{studentsAttendance.length} {studentsAttendance.length === 1 ? 'Student' : 'Students'}</span>
         </div>
 
         <button
