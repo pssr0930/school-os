@@ -244,7 +244,7 @@ export const StudentsListPage: React.FC = () => {
 
       {/* 3. Search & Filter Controls */}
       <div className="bg-[#1F2937] rounded-lg border border-[#303B4D] p-4 space-y-3">
-        {/* Search Bar & Dropdowns */}
+        {/* Search Bar & Dropdowns (Baseline Aligned, Uniform h-9) */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="relative flex-1 w-full">
             <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
@@ -253,7 +253,7 @@ export const StudentsListPage: React.FC = () => {
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search student name, reg no, or parent details..."
-              className="w-full bg-[#243244] border border-[#303B4D] rounded-lg pl-10 pr-9 py-2 text-xs font-normal text-[#F3F4F6] placeholder-[#9CA3AF] focus:outline-none focus:border-blue-500 transition-colors"
+              className="w-full h-9 bg-[#243244] border border-[#303B4D] rounded-lg pl-10 pr-9 text-xs font-normal text-[#F3F4F6] placeholder-[#9CA3AF] focus:outline-none focus:border-blue-500 transition-colors"
             />
             {searchTerm && (
               <button 
@@ -267,13 +267,14 @@ export const StudentsListPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-between md:justify-end">
-            <div className="flex items-center gap-2 bg-[#243244] border border-[#303B4D] rounded-lg px-3 py-2 text-xs text-[#F3F4F6]">
+            {/* Fee Status Dropdown */}
+            <div className="h-9 flex items-center gap-2 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6]">
               <Filter className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
               <select
                 value={feeStatusFilter}
                 onChange={(e) => setFeeStatusFilter(e.target.value as any)}
                 aria-label="Filter by fee status"
-                className="bg-transparent text-xs text-[#F3F4F6] focus:outline-none cursor-pointer"
+                className="bg-transparent text-xs text-[#F3F4F6] focus:outline-none cursor-pointer pl-1 pr-8"
               >
                 <option value="all" className="bg-[#1F2937] text-[#F3F4F6]">All Fee Status</option>
                 <option value="paid" className="bg-[#1F2937] text-[#F3F4F6]">Paid in Full ✓</option>
@@ -281,14 +282,15 @@ export const StudentsListPage: React.FC = () => {
               </select>
             </div>
 
+            {/* Section Dropdown */}
             {selectedClass && sections.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-[#243244] border border-[#303B4D] rounded-lg px-3 py-2 text-xs text-[#F3F4F6]">
+              <div className="h-9 flex items-center gap-1.5 bg-[#243244] border border-[#303B4D] rounded-lg px-3 text-xs text-[#F3F4F6]">
                 <span className="text-[11px] font-medium text-[#9CA3AF]">Sec:</span>
                 <select
                   value={selectedSection}
                   onChange={(e) => setSelectedSection(e.target.value)}
                   aria-label="Filter by section"
-                  className="bg-transparent text-xs text-[#F3F4F6] focus:outline-none cursor-pointer"
+                  className="bg-transparent text-xs text-[#F3F4F6] focus:outline-none cursor-pointer pl-1 pr-8"
                 >
                   <option value="" className="bg-[#1F2937] text-[#F3F4F6]">All Sec</option>
                   {sections.map(s => (
@@ -361,7 +363,7 @@ export const StudentsListPage: React.FC = () => {
             const parentName = st.parentDetails?.fatherName || st.parentDetails?.motherName || st.parentName || 'Parent';
 
             return (
-              <div key={st.id} className="p-3.5 bg-[#1F2937] rounded-lg border border-[#303B4D] space-y-2.5">
+              <div key={st.id} className="p-3.5 bg-[#1F2937] hover:bg-[#243244]/60 rounded-lg border border-[#303B4D] space-y-2.5 transition-colors">
                 <div className="flex items-center justify-between">
                   <div>
                     <h3 className="font-medium text-xs text-[#F3F4F6]">{st.fullName}</h3>
@@ -449,16 +451,16 @@ export const StudentsListPage: React.FC = () => {
           <table className="w-full text-left border-collapse text-xs">
             <thead>
               <tr className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] font-medium text-xs">
-                <th className="py-2.5 px-4">Reg No</th>
-                <th className="py-2.5 px-4">Student Name</th>
-                <th className="py-2.5 px-4">Class & Section</th>
-                <th className="py-2.5 px-4">Parent Details</th>
-                <th className="py-2.5 px-4 text-center">Attendance</th>
-                <th className="py-2.5 px-4 text-right">Fee Status</th>
-                <th className="py-2.5 px-4 text-center">Actions</th>
+                <th className="py-2.5 px-4 w-32">Reg No</th>
+                <th className="py-2.5 px-4 min-w-[180px]">Student Name</th>
+                <th className="py-2.5 px-4 w-36">Class & Section</th>
+                <th className="py-2.5 px-4 w-48">Parent Details</th>
+                <th className="py-2.5 px-4 text-center w-28">Attendance</th>
+                <th className="py-2.5 px-4 text-right w-36">Fee Status</th>
+                <th className="py-2.5 px-4 text-center w-32">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-[#303B4D] bg-[#111827]">
+            <tbody className="divide-y divide-[#303B4D] bg-[#1F2937]">
               {isLoading ? (
                 <tr>
                   <td colSpan={7} className="py-10 text-center text-xs text-[#9CA3AF]">
@@ -484,36 +486,36 @@ export const StudentsListPage: React.FC = () => {
                   const parentName = st.parentDetails?.fatherName || st.parentDetails?.motherName || st.parentName || 'Parent';
 
                   return (
-                    <tr key={st.id} className="hover:bg-[#1F2937]/80 transition-colors">
+                    <tr key={st.id} className="hover:bg-[#243244]/60 transition-colors">
                       {/* Reg No */}
-                      <td className="py-2.5 px-4 font-mono font-medium text-blue-400 tabular-nums">
+                      <td className="py-2.5 px-4 font-mono font-medium text-blue-400 tabular-nums w-32 whitespace-nowrap">
                         {st.registrationNumber}
                       </td>
                       
                       {/* Student Name */}
-                      <td className="py-2.5 px-4">
+                      <td className="py-2.5 px-4 min-w-[180px]">
                         <span className="font-medium text-[#F3F4F6] block leading-tight text-xs">{st.fullName}</span>
                         <span className="text-[10px] text-[#9CA3AF] font-mono">ADM: {st.admissionNumber || st.registrationNumber}</span>
                       </td>
 
                       {/* Class & Section */}
-                      <td className="py-2.5 px-4">
+                      <td className="py-2.5 px-4 w-36 whitespace-nowrap">
                         <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-[#243244] text-[#F3F4F6] border border-[#303B4D]">
                           {st.className} {st.sectionName ? `• Sec ${st.sectionName}` : ''}
                         </span>
                       </td>
 
                       {/* Parent Details */}
-                      <td className="py-2.5 px-4">
-                        <div className="text-[#F3F4F6] font-medium text-xs">{parentName}</div>
+                      <td className="py-2.5 px-4 w-48">
+                        <div className="text-[#F3F4F6] font-medium text-xs truncate max-w-[160px]">{parentName}</div>
                         <div className="font-mono text-[10px] text-[#9CA3AF] flex items-center gap-1 mt-0.5 tabular-nums">
-                          <Phone className="w-3 h-3 text-[#9CA3AF]" />
+                          <Phone className="w-3 h-3 text-[#9CA3AF] shrink-0" />
                           <span>{parentPhone}</span>
                         </div>
                       </td>
 
                       {/* Attendance */}
-                      <td className="py-2.5 px-4 text-center">
+                      <td className="py-2.5 px-4 text-center w-28 whitespace-nowrap">
                         <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
                           (st.attendancePercentage || 100) >= 90 
                             ? 'bg-emerald-950/40 text-[#22C55E] border-emerald-800/40' 
@@ -526,7 +528,7 @@ export const StudentsListPage: React.FC = () => {
                       </td>
 
                       {/* Fee Status */}
-                      <td className="py-2.5 px-4 text-right">
+                      <td className="py-2.5 px-4 text-right w-36 whitespace-nowrap">
                         {balance === 0 ? (
                           <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950/40 text-[#22C55E] border border-emerald-800/40">
                             PAID IN FULL ✓
@@ -539,7 +541,7 @@ export const StudentsListPage: React.FC = () => {
                       </td>
 
                       {/* Action Icons */}
-                      <td className="py-2.5 px-4 text-center">
+                      <td className="py-2.5 px-4 text-center w-32 whitespace-nowrap">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => navigate(`${basePath}/students/${st.id}`)}
@@ -589,9 +591,13 @@ export const StudentsListPage: React.FC = () => {
             </tbody>
           </table>
 
-          {/* Table Footer */}
-          <div className="p-3.5 bg-[#243244] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
-            <span>Showing {filteredStudents.length} of {totalCount} students</span>
+          {/* Table Footer with Pluralization */}
+          <div className="p-3.5 bg-[#1F2937] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
+            <span>
+              Showing <strong className="text-[#F3F4F6] font-medium">{filteredStudents.length}</strong> of{' '}
+              <strong className="text-[#F3F4F6] font-medium">{totalCount}</strong>{' '}
+              {totalCount === 1 ? 'student' : 'students'}
+            </span>
           </div>
         </div>
       </div>
@@ -616,7 +622,7 @@ export const StudentsListPage: React.FC = () => {
               required
               value={promoteFromClass}
               onChange={(e) => setPromoteFromClass(e.target.value)}
-              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-lg px-3.5 py-2 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-lg pl-3.5 pr-8 py-2 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="" className="bg-[#1F2937] text-[#9CA3AF]">Select current class</option>
               {classes.map(c => (
@@ -625,8 +631,10 @@ export const StudentsListPage: React.FC = () => {
             </select>
           </div>
 
-          <div className="flex justify-center my-1">
-            <ArrowRight className="w-4 h-4 text-[#9CA3AF] rotate-90 sm:rotate-0" />
+          <div className="flex justify-center my-2">
+            <div className="w-7 h-7 rounded-full bg-[#243244] border border-[#303B4D] flex items-center justify-center text-[#9CA3AF]">
+              <ArrowRight className="w-3.5 h-3.5 rotate-90 sm:rotate-0" />
+            </div>
           </div>
 
           <div>
@@ -635,7 +643,7 @@ export const StudentsListPage: React.FC = () => {
               required
               value={promoteToClass}
               onChange={(e) => setPromoteToClass(e.target.value)}
-              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-lg px-3.5 py-2 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
+              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-lg pl-3.5 pr-8 py-2 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
               <option value="" className="bg-[#1F2937] text-[#9CA3AF]">Select target class</option>
               {classes.map(c => (
