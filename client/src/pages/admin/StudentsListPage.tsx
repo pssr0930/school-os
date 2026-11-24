@@ -1,10 +1,8 @@
 import React, { useState, useEffect } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { PageHeader } from '../../components/PageHeader';
 import { useAuth } from '../../context/AuthContext';
 import api from '../../services/api';
 import { 
-  Plus, 
   Search, 
   Eye, 
   Edit, 
@@ -16,7 +14,6 @@ import {
   Layers, 
   Phone, 
   X,
-  GraduationCap,
   Filter,
   Users
 } from 'lucide-react';
@@ -51,7 +48,7 @@ export const StudentsListPage: React.FC = () => {
         setClasses(res.data.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch classes', err);
     }
   };
 
@@ -68,7 +65,7 @@ export const StudentsListPage: React.FC = () => {
         setStudents(res.data.data);
       }
     } catch (err) {
-      console.error(err);
+      console.error('Failed to fetch students', err);
     } finally {
       if (!isSilent) setIsLoading(false);
     }
@@ -81,7 +78,7 @@ export const StudentsListPage: React.FC = () => {
   useEffect(() => {
     fetchStudents();
     const interval = setInterval(() => {
-      // Background auto-refresh paused if page is not visible or user is typing
+      // Background auto-refresh paused if page is not visible
       if (!document.hidden) {
         fetchStudents(true);
       }
@@ -93,7 +90,7 @@ export const StudentsListPage: React.FC = () => {
     if (selectedClass) {
       api.get(`/classes/${selectedClass}/sections`).then(res => {
         if (res.data.success) setSections(res.data.data);
-      });
+      }).catch(err => console.error('Failed to fetch sections', err));
     } else {
       setSections([]);
     }
@@ -164,103 +161,105 @@ export const StudentsListPage: React.FC = () => {
   const paidCount = students.filter(s => (s.feeSummary?.balance || 0) === 0).length;
   const dueCount = students.filter(s => (s.feeSummary?.balance || 0) > 0).length;
 
-  const selectedClassObj = classes.find(c => c.id === selectedClass);
   const canCreate = hasPermission('students.create') || hasPermission('students.manage') || user?.role === 'admin';
 
   return (
-    <div className="w-full max-w-7xl mx-auto space-y-5">
-      {/* 1. HEADER BAR */}
-      <PageHeader
-        title="Students"
-        action={
-          <div className="flex items-center gap-2.5">
-            {user?.role === 'admin' && (
-              <button
-                onClick={() => setIsPromoteModalOpen(true)}
-                className="flex items-center gap-2 px-3.5 py-2 bg-slate-800 hover:bg-slate-700 text-white font-bold text-xs rounded-xl transition-all active:scale-95"
-              >
-                <TrendingUp className="w-4 h-4 text-emerald-400" />
-                <span>Promote Class</span>
-              </button>
-            )}
+    <div className="w-full max-w-7xl mx-auto space-y-6 text-[#F3F4F6]">
+      {/* 1. Page Header & Actions */}
+      <div className="flex flex-col sm:flex-row sm:items-center sm:justify-between gap-4">
+        <div>
+          <h1 className="text-xl sm:text-2xl font-semibold text-[#F3F4F6] tracking-tight">Students</h1>
+          <p className="text-xs text-[#9CA3AF] mt-0.5">Manage student directory, class assignments, attendance, and fee status.</p>
+        </div>
 
-            {canCreate && (
-              <button
-                onClick={() => navigate(selectedClass ? `${basePath}/students/new?classId=${selectedClass}` : `${basePath}/students/new`)}
-                className="flex items-center gap-2 px-4 py-2 bg-blue-600 hover:bg-blue-500 text-white font-extrabold text-xs rounded-xl shadow-sm transition-all active:scale-95"
-              >
-                <UserPlus className="w-4 h-4" />
-                <span>+ Add Student</span>
-              </button>
-            )}
-          </div>
-        }
-      />
+        <div className="flex flex-wrap items-center gap-2.5">
+          {user?.role === 'admin' && (
+            <button
+              onClick={() => setIsPromoteModalOpen(true)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-[#1F2937] hover:bg-gray-700 text-[#F3F4F6] text-xs font-medium rounded-lg border border-[#303B4D] transition-colors"
+            >
+              <TrendingUp className="w-3.5 h-3.5 text-emerald-400" />
+              <span>Promote Class</span>
+            </button>
+          )}
 
-      {/* 2. STATS BAR */}
-      <div className="grid grid-cols-2 sm:grid-cols-4 gap-3.5">
+          {canCreate && (
+            <button
+              onClick={() => navigate(selectedClass ? `${basePath}/students/new?classId=${selectedClass}` : `${basePath}/students/new`)}
+              className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white text-xs font-medium rounded-lg transition-colors"
+            >
+              <UserPlus className="w-3.5 h-3.5" />
+              <span>+ Add Student</span>
+            </button>
+          )}
+        </div>
+      </div>
+
+      {/* 2. Summary Cards */}
+      <div className="grid grid-cols-2 sm:grid-cols-4 gap-4">
         {/* Total Students Card */}
-        <div className="bg-gradient-to-br from-blue-50/90 via-indigo-50/50 to-white p-4 rounded-2xl border border-blue-100/90 shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:border-blue-200">
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-extrabold text-blue-600/80 uppercase tracking-wider">Total Students</p>
-            <p className="text-2xl font-black text-slate-900 font-mono mt-0.5">{totalCount}</p>
+            <p className="text-xs font-medium text-[#9CA3AF]">Total Students</p>
+            <p className="text-2xl font-semibold text-[#F3F4F6] font-mono tabular-nums mt-1">{totalCount}</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-blue-500/10 text-blue-600 flex items-center justify-center shrink-0">
-            <Users className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-blue-500/10 text-blue-400 flex items-center justify-center shrink-0 border border-blue-500/20">
+            <Users className="w-4 h-4" />
           </div>
         </div>
 
         {/* Paid in Full Card */}
-        <div className="bg-gradient-to-br from-emerald-50/90 via-teal-50/50 to-white p-4 rounded-2xl border border-emerald-100/90 shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:border-emerald-200">
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-extrabold text-emerald-700/80 uppercase tracking-wider">Paid in Full</p>
-            <p className="text-2xl font-black text-emerald-700 font-mono mt-0.5">{paidCount}</p>
+            <p className="text-xs font-medium text-[#9CA3AF]">Paid in Full</p>
+            <p className="text-2xl font-semibold text-[#F3F4F6] font-mono tabular-nums mt-1">{paidCount}</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-emerald-500/10 text-emerald-600 flex items-center justify-center shrink-0">
-            <Check className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-emerald-500/10 text-[#22C55E] flex items-center justify-center shrink-0 border border-emerald-500/20">
+            <Check className="w-4 h-4" />
           </div>
         </div>
 
         {/* Pending Dues Card */}
-        <div className="bg-gradient-to-br from-amber-50/90 via-orange-50/50 to-white p-4 rounded-2xl border border-amber-100/90 shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:border-amber-200">
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-extrabold text-amber-700/80 uppercase tracking-wider">Pending Dues</p>
-            <p className="text-2xl font-black text-amber-800 font-mono mt-0.5">{dueCount}</p>
+            <p className="text-xs font-medium text-[#9CA3AF]">Pending Dues</p>
+            <p className="text-2xl font-semibold text-[#F3F4F6] font-mono tabular-nums mt-1">{dueCount}</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-amber-500/10 text-amber-600 flex items-center justify-center shrink-0">
-            <Filter className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-amber-500/10 text-[#F59E0B] flex items-center justify-center shrink-0 border border-amber-500/20">
+            <Filter className="w-4 h-4" />
           </div>
         </div>
 
         {/* Classes Card */}
-        <div className="bg-gradient-to-br from-purple-50/90 via-indigo-50/50 to-white p-4 rounded-2xl border border-purple-100/90 shadow-xs flex items-center justify-between transition-all hover:shadow-md hover:border-purple-200">
+        <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-5 flex items-center justify-between">
           <div>
-            <p className="text-[10px] font-extrabold text-purple-600/80 uppercase tracking-wider">Classes</p>
-            <p className="text-2xl font-black text-purple-950 font-mono mt-0.5">{classes.length}</p>
+            <p className="text-xs font-medium text-[#9CA3AF]">Classes</p>
+            <p className="text-2xl font-semibold text-[#F3F4F6] font-mono tabular-nums mt-1">{classes.length}</p>
           </div>
-          <div className="w-10 h-10 rounded-xl bg-purple-500/10 text-purple-600 flex items-center justify-center shrink-0">
-            <Layers className="w-5 h-5" />
+          <div className="w-9 h-9 rounded-lg bg-purple-500/10 text-purple-400 flex items-center justify-center shrink-0 border border-purple-500/20">
+            <Layers className="w-4 h-4" />
           </div>
         </div>
       </div>
 
-      {/* 3. SEARCH & FILTERS TOOLBAR */}
-      <div className="bg-white rounded-2xl border border-slate-200 p-4 shadow-xs space-y-3">
-        {/* Search Bar & Filters */}
+      {/* 3. Search & Filter Controls */}
+      <div className="bg-[#1F2937] rounded-lg border border-[#303B4D] p-4 space-y-3">
+        {/* Search Bar & Dropdowns */}
         <div className="flex flex-col md:flex-row items-center justify-between gap-3">
           <div className="relative flex-1 w-full">
-            <Search className="w-4 h-4 text-slate-400 absolute left-3.5 top-2.5" />
+            <Search className="w-3.5 h-3.5 text-[#9CA3AF] absolute left-3.5 top-1/2 -translate-y-1/2 pointer-events-none" />
             <input
               type="text"
               value={searchTerm}
               onChange={(e) => setSearchTerm(e.target.value)}
               placeholder="Search student name, reg no, or parent details..."
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl pl-9.5 pr-8 py-2 text-xs font-medium text-slate-900 focus:outline-none focus:border-blue-500 focus:bg-white transition-colors"
+              className="w-full bg-[#243244] border border-[#303B4D] rounded-lg pl-10 pr-9 py-2 text-xs font-normal text-[#F3F4F6] placeholder-[#9CA3AF] focus:outline-none focus:border-blue-500 transition-colors"
             />
             {searchTerm && (
               <button 
                 onClick={() => setSearchTerm('')}
-                className="absolute right-3 top-2.5 text-slate-400 hover:text-slate-600"
+                className="absolute right-3 top-1/2 -translate-y-1/2 text-[#9CA3AF] hover:text-[#F3F4F6] transition-colors"
+                aria-label="Clear search input"
               >
                 <X className="w-3.5 h-3.5" />
               </button>
@@ -268,30 +267,32 @@ export const StudentsListPage: React.FC = () => {
           </div>
 
           <div className="flex items-center gap-2 w-full md:w-auto shrink-0 justify-between md:justify-end">
-            <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-semibold">
-              <Filter className="w-3.5 h-3.5 text-slate-400" />
+            <div className="flex items-center gap-2 bg-[#243244] border border-[#303B4D] rounded-lg px-3 py-2 text-xs text-[#F3F4F6]">
+              <Filter className="w-3.5 h-3.5 text-[#9CA3AF] shrink-0" />
               <select
                 value={feeStatusFilter}
                 onChange={(e) => setFeeStatusFilter(e.target.value as any)}
-                className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer text-xs"
+                aria-label="Filter by fee status"
+                className="bg-transparent text-xs text-[#F3F4F6] focus:outline-none cursor-pointer"
               >
-                <option value="all">All Fee Status</option>
-                <option value="paid">Paid in Full ✓</option>
-                <option value="due">Pending Dues Only</option>
+                <option value="all" className="bg-[#1F2937] text-[#F3F4F6]">All Fee Status</option>
+                <option value="paid" className="bg-[#1F2937] text-[#F3F4F6]">Paid in Full ✓</option>
+                <option value="due" className="bg-[#1F2937] text-[#F3F4F6]">Pending Dues Only</option>
               </select>
             </div>
 
             {selectedClass && sections.length > 0 && (
-              <div className="flex items-center gap-1.5 bg-slate-50 border border-slate-200 rounded-xl px-3 py-1.5 text-xs text-slate-700 font-semibold">
-                <span className="text-[10px] font-bold text-slate-400 uppercase">Sec:</span>
+              <div className="flex items-center gap-1.5 bg-[#243244] border border-[#303B4D] rounded-lg px-3 py-2 text-xs text-[#F3F4F6]">
+                <span className="text-[11px] font-medium text-[#9CA3AF]">Sec:</span>
                 <select
                   value={selectedSection}
                   onChange={(e) => setSelectedSection(e.target.value)}
-                  className="bg-transparent font-bold text-slate-800 focus:outline-none cursor-pointer text-xs"
+                  aria-label="Filter by section"
+                  className="bg-transparent text-xs text-[#F3F4F6] focus:outline-none cursor-pointer"
                 >
-                  <option value="">All Sec</option>
+                  <option value="" className="bg-[#1F2937] text-[#F3F4F6]">All Sec</option>
                   {sections.map(s => (
-                    <option key={s.id} value={s.id}>Sec {s.name}</option>
+                    <option key={s.id} value={s.id} className="bg-[#1F2937] text-[#F3F4F6]">Sec {s.name}</option>
                   ))}
                 </select>
               </div>
@@ -300,18 +301,20 @@ export const StudentsListPage: React.FC = () => {
         </div>
 
         {/* Class Filter Tabs */}
-        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-slate-100 pt-3">
+        <div className="flex items-center gap-1.5 overflow-x-auto pb-1 scrollbar-none border-t border-[#303B4D] pt-3">
           <button
             onClick={() => { setSelectedClass(''); setSelectedSection(''); }}
-            className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all flex items-center gap-1.5 shrink-0 ${
+            className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors flex items-center gap-1.5 shrink-0 ${
               selectedClass === '' 
-                ? 'bg-slate-900 text-white shadow-xs' 
-                : 'bg-slate-100 hover:bg-slate-200 text-slate-700'
+                ? 'bg-blue-600 text-white' 
+                : 'bg-[#243244] hover:bg-gray-700/60 text-[#9CA3AF] hover:text-[#F3F4F6] border border-[#303B4D]'
             }`}
           >
             <Layers className="w-3.5 h-3.5" />
             <span>All Classes</span>
-            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${selectedClass === '' ? 'bg-slate-800 text-slate-200' : 'bg-slate-200 text-slate-700'}`}>
+            <span className={`px-1.5 py-0.5 rounded-full text-[10px] font-mono ${
+              selectedClass === '' ? 'bg-blue-700/80 text-white' : 'bg-[#1F2937] text-[#9CA3AF]'
+            }`}>
               {students.length}
             </span>
           </button>
@@ -322,10 +325,10 @@ export const StudentsListPage: React.FC = () => {
               <button
                 key={c.id}
                 onClick={() => { setSelectedClass(c.id); setSelectedSection(''); }}
-                className={`px-3.5 py-1.5 rounded-xl text-xs font-bold transition-all shrink-0 ${
+                className={`px-3 py-1.5 rounded-lg text-xs font-medium transition-colors shrink-0 ${
                   isSelected 
-                    ? 'bg-blue-600 text-white shadow-xs' 
-                    : 'bg-slate-50 hover:bg-slate-100 text-slate-700 border border-slate-200'
+                    ? 'bg-blue-600 text-white' 
+                    : 'bg-[#243244] hover:bg-gray-700/60 text-[#9CA3AF] hover:text-[#F3F4F6] border border-[#303B4D]'
                 }`}
               >
                 <span>{c.name}</span>
@@ -338,12 +341,18 @@ export const StudentsListPage: React.FC = () => {
       {/* 4. MOBILE CARDS VIEW (< 768px) */}
       <div className="block md:hidden space-y-2.5">
         {isLoading ? (
-          <div className="p-6 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 text-xs font-semibold">
+          <div className="p-6 text-center text-[#9CA3AF] bg-[#1F2937] rounded-lg border border-[#303B4D] text-xs">
             Loading students...
           </div>
         ) : filteredStudents.length === 0 ? (
-          <div className="p-6 text-center text-slate-400 bg-white rounded-2xl border border-slate-200 space-y-2 text-xs">
-            <p className="font-semibold text-slate-700">No student records found.</p>
+          <div className="p-8 text-center bg-[#1F2937] rounded-lg border border-[#303B4D] space-y-2">
+            <Users className="w-6 h-6 mx-auto text-[#9CA3AF] mb-1" />
+            <p className="font-medium text-xs text-[#F3F4F6]">No student records found.</p>
+            <p className="text-[11px] text-[#9CA3AF]">
+              {searchTerm || selectedClass || feeStatusFilter !== 'all'
+                ? "No students match your active search and filter criteria."
+                : "No students enrolled in this directory yet."}
+            </p>
           </div>
         ) : (
           filteredStudents.map((st) => {
@@ -352,58 +361,81 @@ export const StudentsListPage: React.FC = () => {
             const parentName = st.parentDetails?.fatherName || st.parentDetails?.motherName || st.parentName || 'Parent';
 
             return (
-              <div key={st.id} className="p-3.5 bg-white rounded-2xl border border-slate-200 shadow-xs space-y-2.5">
+              <div key={st.id} className="p-3.5 bg-[#1F2937] rounded-lg border border-[#303B4D] space-y-2.5">
                 <div className="flex items-center justify-between">
                   <div>
-                    <h3 className="font-extrabold text-xs text-slate-900">{st.fullName}</h3>
-                    <p className="text-[10px] font-mono font-bold text-blue-600">REG: {st.registrationNumber}</p>
+                    <h3 className="font-medium text-xs text-[#F3F4F6]">{st.fullName}</h3>
+                    <p className="text-[10px] font-mono text-blue-400">REG: {st.registrationNumber}</p>
                   </div>
 
-                  <span className="px-2.5 py-1 bg-slate-100 text-slate-800 font-extrabold text-[10px] rounded-lg border border-slate-200">
+                  <span className="px-2 py-0.5 bg-[#243244] text-[#F3F4F6] font-medium text-[10px] rounded border border-[#303B4D]">
                     {st.className} {st.sectionName ? `- ${st.sectionName}` : ''}
                   </span>
                 </div>
 
-                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-slate-100">
+                <div className="grid grid-cols-2 gap-2 text-xs pt-2 border-t border-[#303B4D]">
                   <div>
-                    <p className="text-[9px] text-slate-400 uppercase font-extrabold">Parent</p>
-                    <p className="font-semibold text-slate-900 truncate">{parentName}</p>
-                    <p className="font-mono text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                      <Phone className="w-3 h-3 text-slate-400" />
+                    <p className="text-[9px] text-[#9CA3AF] uppercase font-medium">Parent</p>
+                    <p className="font-medium text-[#F3F4F6] truncate">{parentName}</p>
+                    <p className="font-mono text-[10px] text-[#9CA3AF] flex items-center gap-1 mt-0.5 tabular-nums">
+                      <Phone className="w-3 h-3 text-[#9CA3AF]" />
                       {parentPhone}
                     </p>
                   </div>
 
                   <div className="text-right">
-                    <p className="text-[9px] text-slate-400 uppercase font-extrabold">Fee Status</p>
+                    <p className="text-[9px] text-[#9CA3AF] uppercase font-medium">Fee Status</p>
                     {balance === 0 ? (
-                      <span className="text-[10px] font-black text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded border border-emerald-200 inline-block mt-0.5">
+                      <span className="text-[10px] font-medium text-[#22C55E] bg-emerald-950/40 px-2 py-0.5 rounded border border-emerald-800/40 inline-block mt-0.5">
                         PAID IN FULL ✓
                       </span>
                     ) : (
-                      <span className="text-[10px] font-mono font-black text-amber-900 bg-amber-50 px-2 py-0.5 rounded border border-amber-200 inline-block mt-0.5">
+                      <span className="text-[10px] font-mono font-medium text-[#F59E0B] bg-amber-950/40 px-2 py-0.5 rounded border border-amber-800/40 inline-block mt-0.5 tabular-nums">
                         ₹{balance.toLocaleString('en-IN')} DUE
                       </span>
                     )}
                   </div>
                 </div>
 
-                <div className="flex items-center gap-2 pt-2 border-t border-slate-100">
+                <div className="flex items-center gap-2 pt-2 border-t border-[#303B4D]">
                   <button
                     onClick={() => navigate(`${basePath}/students/${st.id}`)}
-                    className="flex-1 py-1.5 bg-slate-900 hover:bg-slate-800 text-white font-bold text-xs rounded-xl flex items-center justify-center gap-1.5 transition-colors"
+                    className="flex-1 py-1.5 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] font-medium text-xs rounded-lg flex items-center justify-center gap-1.5 transition-colors border border-[#303B4D]"
                   >
-                    <Eye className="w-3.5 h-3.5" />
+                    <Eye className="w-3.5 h-3.5 text-[#9CA3AF]" />
                     <span>View Profile</span>
                   </button>
 
                   <button
                     onClick={() => navigate(`${basePath}/students/${st.id}/edit`)}
-                    className="p-1.5 bg-slate-100 hover:bg-slate-200 text-slate-700 rounded-xl font-bold text-xs"
+                    className="p-1.5 bg-[#243244] hover:bg-gray-700 text-[#9CA3AF] hover:text-blue-400 rounded-lg transition-colors border border-[#303B4D]"
                     title="Edit Student"
+                    aria-label="Edit Student"
                   >
                     <Edit className="w-3.5 h-3.5" />
                   </button>
+
+                  {user?.role === 'admin' && (
+                    <>
+                      <button
+                        onClick={() => handlePromoteSingleStudent(st.id, st.fullName)}
+                        className="p-1.5 bg-[#243244] hover:bg-gray-700 text-[#9CA3AF] hover:text-emerald-400 rounded-lg transition-colors border border-[#303B4D]"
+                        title="Promote Student"
+                        aria-label="Promote Student"
+                      >
+                        <TrendingUp className="w-3.5 h-3.5" />
+                      </button>
+
+                      <button
+                        onClick={() => handleArchiveStudent(st.id, st.fullName)}
+                        className="p-1.5 bg-[#243244] hover:bg-gray-700 text-[#9CA3AF] hover:text-red-400 rounded-lg transition-colors border border-[#303B4D]"
+                        title="Archive Student"
+                        aria-label="Archive Student"
+                      >
+                        <Archive className="w-3.5 h-3.5" />
+                      </button>
+                    </>
+                  )}
                 </div>
               </div>
             );
@@ -412,31 +444,37 @@ export const StudentsListPage: React.FC = () => {
       </div>
 
       {/* 5. DESKTOP DATA TABLE (>= 768px) */}
-      <div className="hidden md:block bg-white rounded-2xl border border-slate-200 shadow-xs overflow-hidden">
+      <div className="hidden md:block bg-[#1F2937] rounded-lg border border-[#303B4D] overflow-hidden">
         <div className="overflow-x-auto">
           <table className="w-full text-left border-collapse text-xs">
             <thead>
-              <tr className="bg-slate-50 border-b border-slate-200 text-slate-500 font-bold uppercase text-[10px] tracking-wider">
-                <th className="py-3 px-5">Reg No</th>
-                <th className="py-3 px-5">Student Name</th>
-                <th className="py-3 px-5">Class & Section</th>
-                <th className="py-3 px-5">Parent Details</th>
-                <th className="py-3 px-5 text-center">Attendance</th>
-                <th className="py-3 px-5 text-right">Fee Status</th>
-                <th className="py-3 px-5 text-center">Actions</th>
+              <tr className="bg-[#243244] border-b border-[#303B4D] text-[#9CA3AF] font-medium text-xs">
+                <th className="py-2.5 px-4">Reg No</th>
+                <th className="py-2.5 px-4">Student Name</th>
+                <th className="py-2.5 px-4">Class & Section</th>
+                <th className="py-2.5 px-4">Parent Details</th>
+                <th className="py-2.5 px-4 text-center">Attendance</th>
+                <th className="py-2.5 px-4 text-right">Fee Status</th>
+                <th className="py-2.5 px-4 text-center">Actions</th>
               </tr>
             </thead>
-            <tbody className="divide-y divide-slate-100">
+            <tbody className="divide-y divide-[#303B4D] bg-[#111827]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-slate-400 font-medium">
+                  <td colSpan={7} className="py-10 text-center text-xs text-[#9CA3AF]">
                     Loading student list...
                   </td>
                 </tr>
               ) : filteredStudents.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-slate-400">
-                    <p className="font-semibold text-slate-700 text-xs">No student records match your search.</p>
+                  <td colSpan={7} className="py-12 text-center">
+                    <Users className="w-6 h-6 mx-auto text-[#9CA3AF] mb-2" />
+                    <p className="text-xs font-medium text-[#F3F4F6]">No student records found.</p>
+                    <p className="text-[11px] text-[#9CA3AF] mt-0.5">
+                      {searchTerm || selectedClass || feeStatusFilter !== 'all'
+                        ? "No students match your active search and filter criteria."
+                        : "No students enrolled in this directory yet."}
+                    </p>
                   </td>
                 </tr>
               ) : (
@@ -446,77 +484,79 @@ export const StudentsListPage: React.FC = () => {
                   const parentName = st.parentDetails?.fatherName || st.parentDetails?.motherName || st.parentName || 'Parent';
 
                   return (
-                    <tr key={st.id} className="hover:bg-slate-50/80 transition-colors">
+                    <tr key={st.id} className="hover:bg-[#1F2937]/80 transition-colors">
                       {/* Reg No */}
-                      <td className="py-3 px-5 font-mono font-bold text-blue-600">
+                      <td className="py-2.5 px-4 font-mono font-medium text-blue-400 tabular-nums">
                         {st.registrationNumber}
                       </td>
                       
                       {/* Student Name */}
-                      <td className="py-3 px-5">
-                        <span className="font-extrabold text-slate-900 block leading-tight text-xs">{st.fullName}</span>
-                        <span className="text-[10px] text-slate-400 font-mono font-medium">ADM: {st.admissionNumber || st.registrationNumber}</span>
+                      <td className="py-2.5 px-4">
+                        <span className="font-medium text-[#F3F4F6] block leading-tight text-xs">{st.fullName}</span>
+                        <span className="text-[10px] text-[#9CA3AF] font-mono">ADM: {st.admissionNumber || st.registrationNumber}</span>
                       </td>
 
                       {/* Class & Section */}
-                      <td className="py-3 px-5">
-                        <span className="px-2.5 py-1 rounded-lg font-extrabold text-[11px] bg-slate-100 text-slate-800 border border-slate-200">
+                      <td className="py-2.5 px-4">
+                        <span className="inline-block px-2 py-0.5 rounded text-[11px] font-medium bg-[#243244] text-[#F3F4F6] border border-[#303B4D]">
                           {st.className} {st.sectionName ? `• Sec ${st.sectionName}` : ''}
                         </span>
                       </td>
 
                       {/* Parent Details */}
-                      <td className="py-3 px-5">
-                        <div className="text-slate-900 font-bold text-xs">{parentName}</div>
-                        <div className="font-mono text-[10px] text-slate-500 flex items-center gap-1 mt-0.5">
-                          <Phone className="w-3 h-3 text-slate-400" />
+                      <td className="py-2.5 px-4">
+                        <div className="text-[#F3F4F6] font-medium text-xs">{parentName}</div>
+                        <div className="font-mono text-[10px] text-[#9CA3AF] flex items-center gap-1 mt-0.5 tabular-nums">
+                          <Phone className="w-3 h-3 text-[#9CA3AF]" />
                           <span>{parentPhone}</span>
                         </div>
                       </td>
 
                       {/* Attendance */}
-                      <td className="py-3 px-5 text-center">
-                        <span className={`px-2 py-0.5 rounded-full text-xs font-mono font-extrabold border ${
+                      <td className="py-2.5 px-4 text-center">
+                        <span className={`inline-block px-2 py-0.5 rounded text-[11px] font-mono font-medium border ${
                           (st.attendancePercentage || 100) >= 90 
-                            ? 'bg-emerald-50 text-emerald-700 border-emerald-200' 
+                            ? 'bg-emerald-950/40 text-[#22C55E] border-emerald-800/40' 
                             : (st.attendancePercentage || 100) >= 75 
-                            ? 'bg-amber-50 text-amber-800 border-amber-200' 
-                            : 'bg-red-50 text-red-700 border-red-200'
+                            ? 'bg-amber-950/40 text-[#F59E0B] border-amber-800/40' 
+                            : 'bg-red-950/40 text-[#EF4444] border-red-800/40'
                         }`}>
                           {st.attendancePercentage || 100}%
                         </span>
                       </td>
 
                       {/* Fee Status */}
-                      <td className="py-3 px-5 text-right font-mono font-bold">
+                      <td className="py-2.5 px-4 text-right">
                         {balance === 0 ? (
-                          <span className="text-emerald-700 bg-emerald-50 px-2 py-0.5 rounded-md border border-emerald-200 font-black text-[10px]">
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-medium bg-emerald-950/40 text-[#22C55E] border border-emerald-800/40">
                             PAID IN FULL ✓
                           </span>
                         ) : (
-                          <span className="text-amber-900 bg-amber-50 px-2 py-0.5 rounded-md border border-amber-200 font-black text-[10px]">
+                          <span className="inline-block px-2 py-0.5 rounded text-[10px] font-mono font-medium bg-amber-950/40 text-[#F59E0B] border border-amber-800/40 tabular-nums">
                             ₹{balance.toLocaleString('en-IN')} DUE
                           </span>
                         )}
                       </td>
 
                       {/* Action Icons */}
-                      <td className="py-3 px-5 text-center">
+                      <td className="py-2.5 px-4 text-center">
                         <div className="flex items-center justify-center gap-1">
                           <button
                             onClick={() => navigate(`${basePath}/students/${st.id}`)}
                             title="View Profile"
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-slate-700 transition-colors"
+                            aria-label="View Profile"
+                            className="p-1.5 hover:bg-[#243244] rounded-md text-[#9CA3AF] hover:text-[#F3F4F6] transition-colors"
                           >
-                            <Eye className="w-4 h-4" />
+                            <Eye className="w-3.5 h-3.5" />
                           </button>
                           
                           <button
                             onClick={() => navigate(`${basePath}/students/${st.id}/edit`)}
                             title="Edit Details"
-                            className="p-1.5 hover:bg-slate-100 rounded-lg text-blue-600 transition-colors"
+                            aria-label="Edit Details"
+                            className="p-1.5 hover:bg-[#243244] rounded-md text-[#9CA3AF] hover:text-blue-400 transition-colors"
                           >
-                            <Edit className="w-4 h-4" />
+                            <Edit className="w-3.5 h-3.5" />
                           </button>
 
                           {user?.role === 'admin' && (
@@ -524,17 +564,19 @@ export const StudentsListPage: React.FC = () => {
                               <button
                                 onClick={() => handlePromoteSingleStudent(st.id, st.fullName)}
                                 title="Promote Student"
-                                className="p-1.5 hover:bg-slate-100 rounded-lg text-emerald-600 transition-colors"
+                                aria-label="Promote Student"
+                                className="p-1.5 hover:bg-[#243244] rounded-md text-[#9CA3AF] hover:text-emerald-400 transition-colors"
                               >
-                                <TrendingUp className="w-4 h-4" />
+                                <TrendingUp className="w-3.5 h-3.5" />
                               </button>
 
                               <button
                                 onClick={() => handleArchiveStudent(st.id, st.fullName)}
                                 title="Archive Student"
-                                className="p-1.5 hover:bg-slate-100 rounded-lg text-red-600 transition-colors"
+                                aria-label="Archive Student"
+                                className="p-1.5 hover:bg-[#243244] rounded-md text-[#9CA3AF] hover:text-red-400 transition-colors"
                               >
-                                <Archive className="w-4 h-4" />
+                                <Archive className="w-3.5 h-3.5" />
                               </button>
                             </>
                           )}
@@ -548,7 +590,7 @@ export const StudentsListPage: React.FC = () => {
           </table>
 
           {/* Table Footer */}
-          <div className="p-3.5 bg-slate-50 border-t border-slate-200 flex items-center justify-between text-xs text-slate-500 font-medium">
+          <div className="p-3.5 bg-[#243244] border-t border-[#303B4D] flex items-center justify-between text-xs text-[#9CA3AF]">
             <span>Showing {filteredStudents.length} of {totalCount} students</span>
           </div>
         </div>
@@ -562,42 +604,42 @@ export const StudentsListPage: React.FC = () => {
       >
         <form onSubmit={handlePromoteClassCohort} className="space-y-4 text-xs">
           {promoteSuccessMsg && (
-            <div className="p-3 bg-emerald-50 border border-emerald-200 text-emerald-700 rounded-xl font-bold flex items-center gap-2">
-              <Check className="w-4 h-4 text-emerald-600" />
+            <div className="p-3 bg-emerald-950/40 border border-emerald-800/40 text-[#22C55E] rounded-lg font-medium flex items-center gap-2">
+              <Check className="w-4 h-4 text-[#22C55E]" />
               <span>{promoteSuccessMsg}</span>
             </div>
           )}
 
           <div>
-            <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">Current Class *</label>
+            <label className="block font-medium text-[#9CA3AF] uppercase tracking-wider mb-1 text-[11px]">Current Class *</label>
             <select
               required
               value={promoteFromClass}
               onChange={(e) => setPromoteFromClass(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none"
+              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-lg px-3.5 py-2 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
-              <option value="">Select current class</option>
+              <option value="" className="bg-[#1F2937] text-[#9CA3AF]">Select current class</option>
               {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id} className="bg-[#1F2937] text-[#F3F4F6]">{c.name}</option>
               ))}
             </select>
           </div>
 
           <div className="flex justify-center my-1">
-            <ArrowRight className="w-5 h-5 text-slate-400 rotate-90 sm:rotate-0" />
+            <ArrowRight className="w-4 h-4 text-[#9CA3AF] rotate-90 sm:rotate-0" />
           </div>
 
           <div>
-            <label className="block font-semibold text-slate-700 uppercase tracking-wider mb-1">Target Class *</label>
+            <label className="block font-medium text-[#9CA3AF] uppercase tracking-wider mb-1 text-[11px]">Target Class *</label>
             <select
               required
               value={promoteToClass}
               onChange={(e) => setPromoteToClass(e.target.value)}
-              className="w-full bg-slate-50 border border-slate-200 rounded-xl px-3.5 py-2.5 text-xs text-slate-900 font-semibold focus:outline-none"
+              className="w-full bg-[#1F2937] border border-[#303B4D] rounded-lg px-3.5 py-2 text-xs text-[#F3F4F6] font-medium focus:border-blue-500 focus:outline-none cursor-pointer"
             >
-              <option value="">Select target class</option>
+              <option value="" className="bg-[#1F2937] text-[#9CA3AF]">Select target class</option>
               {classes.map(c => (
-                <option key={c.id} value={c.id}>{c.name}</option>
+                <option key={c.id} value={c.id} className="bg-[#1F2937] text-[#F3F4F6]">{c.name}</option>
               ))}
             </select>
           </div>
@@ -605,7 +647,7 @@ export const StudentsListPage: React.FC = () => {
           <button
             type="submit"
             disabled={isPromoting}
-            className="w-full py-3 bg-emerald-600 hover:bg-emerald-500 text-white font-bold text-xs rounded-xl shadow-xs transition-all flex items-center justify-center gap-2 mt-4"
+            className="w-full py-2.5 bg-blue-600 hover:bg-blue-500 disabled:opacity-50 text-white font-medium text-xs rounded-lg transition-colors flex items-center justify-center gap-2 mt-4"
           >
             <span>{isPromoting ? "Promoting Class..." : "Promote Class"}</span>
           </button>
