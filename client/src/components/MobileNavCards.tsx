@@ -106,33 +106,30 @@ export const MobileNavCards: React.FC = () => {
   return (
     <div className="block md:hidden mb-6 space-y-3">
       <div className="flex items-center justify-between px-1">
-        <h2 className="text-xs font-black uppercase tracking-wider text-slate-500">
-          Mobile App Launcher
+        <h2 className="text-xs font-medium text-[#9CA3AF]">
+          Quick Navigation
         </h2>
-        <span className="text-[10px] font-extrabold text-blue-600 bg-blue-50 px-2 py-0.5 rounded-full border border-blue-200">
-          Tap Card to Open
-        </span>
       </div>
 
-      <div className="grid grid-cols-2 gap-3">
+      <div className="grid grid-cols-2 gap-2.5">
         {visibleCards.map((card) => {
           const Icon = card.icon;
           return (
             <button
               key={card.id}
               onClick={() => navigate(card.path)}
-              className={`p-3.5 rounded-2xl border text-left flex flex-col justify-between transition-all duration-150 active:scale-95 shadow-sm hover:shadow-md ${card.bgLight} min-h-[100px]`}
+              className="p-3 rounded-lg border border-[#303B4D] bg-[#1F2937] text-left flex flex-col justify-between hover:bg-gray-700/50 transition-colors min-h-[90px]"
             >
               <div className="flex items-center justify-between w-full">
-                <div className={`p-2 rounded-xl bg-gradient-to-r ${card.color} text-white shadow-md ${card.shadow}`}>
+                <div className="p-1.5 rounded-md bg-[#111827] border border-[#303B4D] text-blue-400">
                   <Icon className="w-4 h-4" />
                 </div>
-                <ChevronRight className="w-4 h-4 opacity-40 text-slate-600" />
+                <ChevronRight className="w-3.5 h-3.5 text-[#9CA3AF]" />
               </div>
 
-              <div className="mt-2.5">
-                <h3 className="font-extrabold text-sm leading-tight text-slate-900">{card.label}</h3>
-                <p className="text-[10px] text-slate-500 font-medium truncate mt-0.5">{card.description}</p>
+              <div className="mt-2">
+                <h3 className="font-medium text-xs text-[#F3F4F6]">{card.label}</h3>
+                <p className="text-[10px] text-[#9CA3AF] truncate mt-0.5">{card.description}</p>
               </div>
             </button>
           );

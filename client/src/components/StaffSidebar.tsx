@@ -43,29 +43,29 @@ export const StaffSidebar: React.FC = () => {
   return (
     <aside 
       className={`${
-        isCollapsed ? 'w-20' : 'w-64'
-      } bg-slate-900 text-slate-300 flex flex-col min-h-screen border-r border-slate-800 transition-all duration-300 ease-in-out relative group`}
+        isCollapsed ? 'w-16' : 'w-60'
+      } bg-[#111827] text-[#9CA3AF] flex flex-col min-h-screen border-r border-[#303B4D] transition-all duration-200 ease-in-out relative group`}
     >
-      {/* Original Header Logo & Caption */}
-      <div className={`h-16 flex items-center border-b border-slate-800 gap-3 ${isCollapsed ? 'justify-center px-2' : 'px-6'}`}>
+      {/* Header Logo & Caption */}
+      <div className={`h-14 flex items-center border-b border-[#303B4D] gap-2.5 ${isCollapsed ? 'justify-center px-2' : 'px-4'}`}>
         <img 
           src="/pssr-logo.png" 
           alt="School OS Logo" 
-          className="w-9 h-9 rounded-xl object-contain bg-white p-1 shadow-md shadow-emerald-500/20 shrink-0" 
+          className="w-7 h-7 rounded-md object-contain bg-white p-0.5 shrink-0" 
         />
         {!isCollapsed && (
           <div className="truncate">
-            <h1 className="font-bold text-white tracking-wide text-base leading-none">STAFF PORTAL</h1>
-            <span className="text-[10px] uppercase font-semibold text-emerald-400 tracking-wider">Teacher Access</span>
+            <h1 className="font-semibold text-[#F3F4F6] tracking-tight text-sm leading-none">STAFF PORTAL</h1>
+            <span className="text-[10px] text-[#9CA3AF]">Teacher Access</span>
           </div>
         )}
       </div>
 
       {/* Navigation Links */}
-      <nav className="flex-1 py-6 px-3 space-y-1 overflow-y-auto">
+      <nav className="flex-1 py-4 px-2 space-y-0.5 overflow-y-auto">
         {!isCollapsed && (
-          <div className="px-3 mb-2 text-[11px] font-semibold text-slate-400 uppercase tracking-wider">
-            Classroom Operations
+          <div className="px-2.5 mb-2 text-[10px] font-medium text-[#9CA3AF] uppercase tracking-wider">
+            Menu
           </div>
         )}
 
@@ -79,12 +79,12 @@ export const StaffSidebar: React.FC = () => {
               to={item.path}
               title={isCollapsed ? item.label : undefined}
               className={({ isActive }) =>
-                `flex items-center gap-3 px-3 py-2.5 rounded-lg text-sm font-medium transition-all duration-150 ${
-                  isCollapsed ? 'justify-center py-3' : ''
+                `flex items-center gap-2.5 px-2.5 py-2 rounded-md text-xs font-medium transition-colors ${
+                  isCollapsed ? 'justify-center py-2.5' : ''
                 } ${
                   isActive
-                    ? 'bg-emerald-600 text-white shadow-sm shadow-emerald-600/30'
-                    : 'text-slate-400 hover:text-slate-200 hover:bg-slate-800/60'
+                    ? 'bg-blue-500/10 text-blue-400 font-medium'
+                    : 'text-[#9CA3AF] hover:text-[#F3F4F6] hover:bg-[#1F2937]'
                 }`
               }
             >
@@ -96,27 +96,27 @@ export const StaffSidebar: React.FC = () => {
       </nav>
 
       {/* Bottom Footer & Collapse Toggle Action */}
-      <div className="p-4 border-t border-slate-800 flex items-center justify-between text-xs text-slate-500">
+      <div className="p-3 border-t border-[#303B4D] flex items-center justify-between text-[11px] text-[#9CA3AF]">
         {!isCollapsed ? (
           <div>
-            <p className="font-medium text-slate-400">School Operating System</p>
-            <p className="mt-0.5">Staff Interface</p>
+            <p className="font-medium text-slate-300">Staff Portal</p>
+            <p className="text-[10px] text-[#9CA3AF]">v2.5</p>
           </div>
         ) : (
           <button
             onClick={toggleCollapse}
             title="Expand Sidebar"
-            className="w-full flex justify-center py-1 text-emerald-400 hover:text-white"
+            className="w-full flex justify-center py-1 text-slate-400 hover:text-white"
           >
-            <ChevronRight className="w-5 h-5" />
+            <ChevronRight className="w-4 h-4" />
           </button>
         )}
 
         {!isCollapsed && (
           <button
             onClick={toggleCollapse}
-            title="Collapse Sidebar to icons"
-            className="p-1.5 rounded-lg text-slate-400 hover:text-white hover:bg-slate-800 transition-colors"
+            title="Collapse Sidebar"
+            className="p-1 rounded-md text-[#9CA3AF] hover:text-white hover:bg-[#1F2937] transition-colors"
           >
             <ChevronLeft className="w-4 h-4" />
           </button>
