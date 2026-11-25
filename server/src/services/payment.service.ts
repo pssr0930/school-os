@@ -2,6 +2,7 @@ import { dbStore, supabaseAdmin } from '../config/supabase';
 import { env } from '../config/env';
 import { PaymentItem } from '../types';
 import { StudentService } from './student.service';
+import { SmsService, validatePhoneNumber } from './sms.service';
 import crypto from 'crypto';
 
 function toUuid(idStr: string): string {
@@ -24,14 +25,45 @@ export class PaymentService {
     return `REC-${String(maxNum + 1).padStart(5, '0')}`;
   }
 
-  static async recordPayment(schoolId: string, userId: string, data: { studentId: string; amount: number; paymentMethod: 'cash' | 'UPI' | 'bank_transfer' | 'cheque' | 'other'; transactionReference?: string; paymentDate?: string; notes?: string }) {
+  static async recordPayment(schoolId: string, userId: string, data: { studentId: string; amount: number; paymentMethod: 'cash' | 'UPI' | 'bank_transfer' | 'cheque' | 'other'; transactionReference?: string; paymentDate?: string; notes?: string; idempotencyKey?: string }) {
     const targetSchoolId = schoolId || dbStore.schools[0]?.id || '8f3b4c10-91a2-4d5e-8b1c-3f5a7b9c1d2e';
-    
+
+    // Idempotency guard: prevent duplicate payment & duplicate SMS on retried submission
+    if (data.idempotencyKey) {
+      const existingPayment = dbStore.payments.find(
+        p => (p.schoolId === targetSchoolId || (p as any).school_id === targetSchoolId) && p.idempotencyKey === data.idempotencyKey
+      );
+      if (existingPayment) {
+        const existingDetails = await this.getReceiptDetails(targetSchoolId, existingPayment.id);
+        return {
+          ...(existingDetails || { payment: existingPayment }),
+          smsResult: {
+            status: existingPayment.smsStatus || 'pending',
+            error: existingPayment.smsError || '',
+            recipientPhone: existingPayment.smsRecipientPhone || '',
+            alreadyProcessed: true
+          }
+        };
+      }
+    }
+
+    if (!data.amount || isNaN(data.amount) || data.amount <= 0) {
+      const err: any = new Error('Payment amount must be greater than 0.');
+      err.statusCode = 400;
+      throw err;
+    }
+
     let student = dbStore.students.find(s => s.id === data.studentId);
     if (!student) {
       // Hydrate student cache if missing
       await StudentService.getStudents(targetSchoolId, {});
       student = dbStore.students.find(s => s.id === data.studentId);
+    }
+
+    if (!student) {
+      const err: any = new Error('Student record not found. Payment cannot be recorded.');
+      err.statusCode = 404;
+      throw err;
     }
 
     const activeYear = dbStore.academicYears.find(ay => ay.isCurrent || ay.is_current);
@@ -52,6 +84,8 @@ export class PaymentService {
       paymentDate: data.paymentDate || new Date().toISOString().split('T')[0],
       recordedBy: userId,
       notes: data.notes || '',
+      idempotencyKey: data.idempotencyKey || undefined,
+      smsStatus: 'pending',
       createdAt: new Date().toISOString()
     };
 
@@ -127,6 +161,10 @@ export class PaymentService {
     const parents = dbStore.studentParents.find(p => p.studentId === data.studentId || p.student_id === data.studentId);
     const sf = dbStore.studentFees.find(f => f.studentId === data.studentId || f.student_id === data.studentId);
 
+    // ONLY AFTER successful payment persistence: trigger automatic SMS confirmation
+    // Failure to deliver SMS must NEVER roll back the recorded payment
+    const smsResult = await this.dispatchPaymentConfirmationSms(newPayment, targetSchoolId, userId, student, cls, sec, parents, sf, school);
+
     return {
       payment: newPayment,
       school,
@@ -138,7 +176,207 @@ export class PaymentService {
         sectionName: sec ? sec.name : 'A',
         fatherName: parents?.fatherName || parents?.guardianName || parents?.father_name || 'Parent'
       },
-      feeSummary: sf
+      feeSummary: sf,
+      smsResult
+    };
+  }
+
+  private static async dispatchPaymentConfirmationSms(
+    payment: PaymentItem,
+    schoolId: string,
+    userId: string,
+    student: any,
+    cls: any,
+    sec: any,
+    parents: any,
+    sf: any,
+    school: any
+  ): Promise<{ status: 'sent' | 'failed' | 'pending'; error?: string; recipientPhone?: string; messageId?: string; alreadySent?: boolean }> {
+    // Prevent duplicate SMS for an already-confirmed payment
+    if (payment.smsStatus === 'sent') {
+      return {
+        status: 'sent',
+        recipientPhone: payment.smsRecipientPhone || '',
+        messageId: payment.twilioMessageId || '',
+        alreadySent: true
+      };
+    }
+
+    try {
+      // Fallback lookup for parent details in Supabase if missing from memory cache
+      let parentRecord = parents;
+      if (!parentRecord) {
+        try {
+          const { data: cloudParent } = await supabaseAdmin
+            .from('student_parents')
+            .select('*')
+            .eq('student_id', payment.studentId)
+            .maybeSingle();
+          if (cloudParent) {
+            parentRecord = cloudParent;
+            dbStore.studentParents.push(cloudParent);
+          }
+        } catch {
+          // Ignore lookup error and handle missing phone below
+        }
+      }
+
+      const rawPhone =
+        parentRecord?.fatherPhone ||
+        parentRecord?.father_phone ||
+        parentRecord?.motherPhone ||
+        parentRecord?.mother_phone ||
+        parentRecord?.guardianPhone ||
+        parentRecord?.guardian_phone ||
+        parentRecord?.emergencyContactPhone ||
+        parentRecord?.emergency_contact_phone ||
+        '';
+
+      const phoneCheck = validatePhoneNumber(rawPhone);
+      if (!phoneCheck.valid) {
+        payment.smsStatus = 'failed';
+        payment.smsError = phoneCheck.error || 'Parent mobile number is missing or invalid.';
+        payment.smsRecipientPhone = rawPhone ? String(rawPhone).trim() : '';
+        dbStore.saveToDisk();
+        await this.syncPaymentSmsStatusToSupabase(payment);
+        return {
+          status: 'failed',
+          error: payment.smsError,
+          recipientPhone: payment.smsRecipientPhone
+        };
+      }
+
+      const schoolName = school?.name || 'School OS';
+      const studentName = student ? (student.fullName || (student as any).full_name || 'Student') : 'Student';
+      const className = cls ? cls.name : 'Class';
+      const sectionName = sec ? sec.name : '';
+      const classSection = sectionName ? `${className} - ${sectionName}` : className;
+      const formattedAmount = Number(payment.amount || 0).toLocaleString('en-IN');
+      const remainingBalance = Math.max(0, Number(sf?.balance ?? 0)).toLocaleString('en-IN');
+      const modeLabelMap: Record<string, string> = {
+        cash: 'Cash',
+        UPI: 'UPI',
+        bank_transfer: 'Bank Transfer',
+        cheque: 'Cheque',
+        other: 'Other'
+      };
+      const modeLabel = modeLabelMap[payment.paymentMethod] || payment.paymentMethod || 'Payment';
+      const parentName = parentRecord?.fatherName || parentRecord?.father_name || parentRecord?.motherName || parentRecord?.mother_name || parentRecord?.guardianName || parentRecord?.guardian_name || 'Parent';
+
+      const messageBody = `Dear Parent, Fee payment of INR ${formattedAmount} received for ${studentName} (${classSection}) on ${payment.paymentDate} via ${modeLabel}. Receipt No: ${payment.receiptNumber}. Remaining Balance: INR ${remainingBalance}. Thank you, ${schoolName}.`;
+
+      const logRecord = await SmsService.sendSms(
+        schoolId,
+        phoneCheck.formatted,
+        parentName,
+        payment.studentId,
+        messageBody,
+        'fee_payment',
+        userId,
+        true
+      );
+
+      if (logRecord.status === 'sent') {
+        payment.smsStatus = 'sent';
+        payment.smsError = '';
+        payment.smsSentAt = new Date().toISOString();
+        payment.smsRecipientPhone = phoneCheck.formatted;
+        payment.twilioMessageId = logRecord.twilioMessageId;
+      } else {
+        payment.smsStatus = 'failed';
+        payment.smsError = logRecord.status === 'mock_sent'
+          ? 'SMS gateway not configured: configure TWILIO_ACCOUNT_SID, TWILIO_AUTH_TOKEN, and TWILIO_PHONE_NUMBER.'
+          : (logRecord.errorMessage || 'SMS delivery failed via Twilio.');
+        payment.smsRecipientPhone = phoneCheck.formatted;
+        payment.twilioMessageId = logRecord.twilioMessageId;
+      }
+
+      dbStore.saveToDisk();
+      await this.syncPaymentSmsStatusToSupabase(payment);
+
+      return {
+        status: payment.smsStatus,
+        error: payment.smsError || undefined,
+        recipientPhone: payment.smsRecipientPhone,
+        messageId: payment.twilioMessageId
+      };
+    } catch (err: any) {
+      payment.smsStatus = 'failed';
+      payment.smsError = err?.message || 'Unexpected error while sending SMS confirmation.';
+      dbStore.saveToDisk();
+      await this.syncPaymentSmsStatusToSupabase(payment);
+      return {
+        status: 'failed',
+        error: payment.smsError,
+        recipientPhone: payment.smsRecipientPhone
+      };
+    }
+  }
+
+  private static async syncPaymentSmsStatusToSupabase(payment: PaymentItem) {
+    try {
+      await supabaseAdmin
+        .from('payments')
+        .update({
+          sms_status: payment.smsStatus || 'pending',
+          sms_error: payment.smsError || null,
+          sms_sent_at: payment.smsSentAt || null,
+          sms_recipient_phone: payment.smsRecipientPhone || null,
+          twilio_message_id: payment.twilioMessageId || null
+        })
+        .eq('id', toUuid(payment.id));
+    } catch {
+      // Best-effort sync; ignore if live schema hasn't added SMS columns yet
+    }
+  }
+
+  static async retryPaymentSms(schoolId: string, paymentId: string, userId: string) {
+    const targetSchoolId = schoolId || dbStore.schools[0]?.id || '8f3b4c10-91a2-4d5e-8b1c-3f5a7b9c1d2e';
+    let payment = dbStore.payments.find(
+      p => (p.id === paymentId || toUuid(p.id) === paymentId) &&
+        (p.schoolId === targetSchoolId || (p as any).school_id === targetSchoolId)
+    );
+
+    if (!payment) {
+      const details = await this.getReceiptDetails(targetSchoolId, paymentId);
+      if (details?.payment) {
+        payment = details.payment;
+      }
+    }
+
+    if (!payment) return null;
+
+    if (payment.smsStatus === 'sent') {
+      return {
+        alreadySent: true,
+        payment,
+        smsResult: {
+          status: 'sent' as const,
+          recipientPhone: payment.smsRecipientPhone || '',
+          messageId: payment.twilioMessageId || '',
+          alreadySent: true
+        }
+      };
+    }
+
+    const targetStudentId = payment.studentId || (payment as any).student_id;
+    let student = dbStore.students.find(s => s.id === targetStudentId);
+    if (!student) {
+      await StudentService.getStudents(targetSchoolId, {});
+      student = dbStore.students.find(s => s.id === targetStudentId);
+    }
+
+    const school = dbStore.schools.find(s => s.id === targetSchoolId) || dbStore.schools[0] || { name: 'School OS' };
+    const cls = dbStore.classes.find(c => c.id === student?.classId || c.id === (student as any)?.class_id);
+    const sec = dbStore.sections.find(s => s.id === student?.sectionId || s.id === (student as any)?.section_id);
+    const parents = dbStore.studentParents.find(p => p.studentId === targetStudentId || p.student_id === targetStudentId);
+    const sf = dbStore.studentFees.find(f => f.studentId === targetStudentId || f.student_id === targetStudentId);
+
+    const smsResult = await this.dispatchPaymentConfirmationSms(payment, targetSchoolId, userId, student, cls, sec, parents, sf, school);
+    return {
+      alreadySent: false,
+      payment,
+      smsResult
     };
   }
 
@@ -207,7 +445,11 @@ export class PaymentService {
         studentName: student ? (student.fullName || (student as any).full_name) : 'Student Record',
         registrationNumber: student ? (student.registrationNumber || (student as any).registration_number) : '',
         className: cls ? cls.name : 'LKG',
-        sectionName: sec ? sec.name : 'A'
+        sectionName: sec ? sec.name : 'A',
+        smsStatus: p.smsStatus || (p as any).sms_status || 'pending',
+        smsError: p.smsError || (p as any).sms_error || '',
+        smsSentAt: p.smsSentAt || (p as any).sms_sent_at || undefined,
+        smsRecipientPhone: p.smsRecipientPhone || (p as any).sms_recipient_phone || ''
       };
     }).sort((a, b) => new Date(b.createdAt || b.paymentDate).getTime() - new Date(a.createdAt || a.paymentDate).getTime());
   }

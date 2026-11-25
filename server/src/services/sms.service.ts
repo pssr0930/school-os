@@ -100,6 +100,24 @@ export function normalizePhoneNumber(rawPhone: string, defaultCountry = '+91'): 
   return `${defaultCountry}${cleaned}`;
 }
 
+export function validatePhoneNumber(rawPhone?: string | null): { valid: boolean; formatted: string; error?: string } {
+  if (!rawPhone || typeof rawPhone !== 'string' || !rawPhone.trim()) {
+    return { valid: false, formatted: '', error: 'Parent mobile number is not registered.' };
+  }
+  const digitsOnly = rawPhone.replace(/\D/g, '');
+  if (digitsOnly.length < 10 || digitsOnly.length > 15) {
+    return { valid: false, formatted: '', error: `Invalid parent phone number "${rawPhone.trim()}" (must be 10-15 digits).` };
+  }
+  if (/^0+$/.test(digitsOnly)) {
+    return { valid: false, formatted: '', error: `Invalid parent phone number "${rawPhone.trim()}".` };
+  }
+  const formatted = normalizePhoneNumber(rawPhone);
+  if (!/^\+[1-9]\d{9,14}$/.test(formatted)) {
+    return { valid: false, formatted: '', error: `Invalid E.164 phone format for "${rawPhone.trim()}".` };
+  }
+  return { valid: true, formatted };
+}
+
 export class SmsService {
   static getTemplates(schoolId: string) {
     const schoolTemplates = dbStore.smsTemplates.filter(t => t.schoolId === schoolId || t.school_id === schoolId);

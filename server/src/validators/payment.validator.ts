@@ -9,5 +9,6 @@ export const recordPaymentSchema = z.object({
   ]).transform(val => (val.toUpperCase() === 'UPI' ? 'UPI' : val as any)),
   transactionReference: z.string().optional().nullable(),
   paymentDate: z.string().optional().default(() => new Date().toISOString().split('T')[0]),
-  notes: z.string().optional().nullable()
+  notes: z.string().optional().nullable(),
+  idempotencyKey: z.string().optional().nullable()
 });

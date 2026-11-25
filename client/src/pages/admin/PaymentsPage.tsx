@@ -3,7 +3,7 @@ import { useSearchParams } from 'react-router-dom';
 import { PageHeader } from '../../components/PageHeader';
 import { PrintableReceipt } from '../../components/PrintableReceipt';
 import api from '../../services/api';
-import { Plus, Printer, Search, Filter, AlertCircle, Loader2, ChevronDown, CheckCircle2 } from 'lucide-react';
+import { Plus, Printer, Search, Filter, AlertCircle, Loader2, ChevronDown, CheckCircle2, RefreshCw, MessageSquare, X } from 'lucide-react';
 import { Modal } from '../../components/Modal';
 
 export const PaymentsPage: React.FC = () => {
@@ -37,6 +37,17 @@ export const PaymentsPage: React.FC = () => {
   const [receiptData, setReceiptData] = useState<any>(null);
   const [isReceiptOpen, setIsReceiptOpen] = useState(false);
   const [printingPaymentId, setPrintingPaymentId] = useState<string | null>(null);
+
+  // Automatic Payment SMS Notification & Retry State
+  const [idempotencyKey, setIdempotencyKey] = useState<string>(() => (typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`));
+  const [retryingPaymentId, setRetryingPaymentId] = useState<string | null>(null);
+  const [smsNotification, setSmsNotification] = useState<{
+    type: 'success' | 'warning' | 'error';
+    title: string;
+    message: string;
+    paymentId?: string;
+    canRetry?: boolean;
+  } | null>(null);
 
   useEffect(() => {
     if (urlStudentId) {
@@ -207,18 +218,41 @@ export const PaymentsPage: React.FC = () => {
         amount: numericAmount,
         paymentMethod,
         transactionReference: transactionReference?.trim() || undefined,
-        notes: notes?.trim() || undefined
+        notes: notes?.trim() || undefined,
+        idempotencyKey
       });
 
       if (res.data.success) {
+        const savedPayment = res.data.data?.payment;
+        const smsResult = res.data.data?.smsResult;
+
         setIsRecordModalOpen(false);
         setAmount('');
         setTransactionReference('');
         setNotes('');
         setModalError('');
-        
+        setIdempotencyKey(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
+
+        if (smsResult?.status === 'sent') {
+          setSmsNotification({
+            type: 'success',
+            title: `Payment Recorded (${savedPayment?.receiptNumber || 'Receipt Generated'})`,
+            message: `Confirmation SMS automatically sent to parent mobile ${smsResult.recipientPhone || ''}.`,
+            paymentId: savedPayment?.id,
+            canRetry: false
+          });
+        } else {
+          setSmsNotification({
+            type: 'warning',
+            title: `Payment Recorded (${savedPayment?.receiptNumber || 'Receipt Generated'}) — SMS Not Sent`,
+            message: smsResult?.error || 'Payment saved, but confirmation SMS could not be delivered.',
+            paymentId: savedPayment?.id,
+            canRetry: true
+          });
+        }
+
         // Fetch generated printable receipt details instantly
-        const receiptRes = await api.get(`/payments/${res.data.data.payment.id}/receipt`);
+        const receiptRes = await api.get(`/payments/${savedPayment.id}/receipt`);
         if (receiptRes.data.success) {
           setReceiptData(receiptRes.data.data);
           setIsReceiptOpen(true);
@@ -230,6 +264,41 @@ export const PaymentsPage: React.FC = () => {
       setModalError(err.response?.data?.message || 'Failed to record payment. Please check student and amount details.');
     } finally {
       setIsSubmitting(false);
+    }
+  };
+
+  const handleRetrySms = async (paymentId: string) => {
+    try {
+      setRetryingPaymentId(paymentId);
+      const res = await api.post(`/payments/${paymentId}/retry-sms`);
+      if (res.data?.success) {
+        setSmsNotification({
+          type: 'success',
+          title: 'SMS Confirmation Sent',
+          message: res.data.message || 'Payment confirmation SMS delivered to parent.',
+          paymentId,
+          canRetry: false
+        });
+      } else {
+        setSmsNotification({
+          type: 'error',
+          title: 'SMS Retry Failed',
+          message: res.data?.message || 'Could not deliver payment confirmation SMS.',
+          paymentId,
+          canRetry: true
+        });
+      }
+      await fetchData(true);
+    } catch (err: any) {
+      setSmsNotification({
+        type: 'error',
+        title: 'SMS Retry Error',
+        message: err.response?.data?.message || 'Failed to retry payment confirmation SMS.',
+        paymentId,
+        canRetry: true
+      });
+    } finally {
+      setRetryingPaymentId(null);
     }
   };
 
@@ -260,6 +329,7 @@ export const PaymentsPage: React.FC = () => {
           <button
             onClick={() => {
               setModalError('');
+              setIdempotencyKey(typeof crypto !== 'undefined' && crypto.randomUUID ? crypto.randomUUID() : `${Date.now()}-${Math.random()}`);
               setIsRecordModalOpen(true);
             }}
             className="flex items-center gap-2 px-3.5 py-2 bg-blue-600 hover:bg-blue-500 text-white font-medium text-xs rounded-lg transition-colors shrink-0"
@@ -269,6 +339,53 @@ export const PaymentsPage: React.FC = () => {
           </button>
         }
       />
+
+      {/* Automatic SMS Delivery Notification Banner */}
+      {smsNotification && (
+        <div
+          className={`p-3.5 rounded-lg border flex flex-col sm:flex-row sm:items-center justify-between gap-3 text-xs ${
+            smsNotification.type === 'success'
+              ? 'bg-emerald-950/30 border-emerald-700/50 text-emerald-300'
+              : smsNotification.type === 'warning'
+              ? 'bg-amber-950/30 border-amber-700/50 text-amber-300'
+              : 'bg-red-950/30 border-red-700/50 text-red-300'
+          }`}
+        >
+          <div className="flex items-start gap-2.5">
+            {smsNotification.type === 'success' ? (
+              <CheckCircle2 className="w-4 h-4 text-[#22C55E] shrink-0 mt-0.5" />
+            ) : (
+              <AlertCircle className="w-4 h-4 text-[#F59E0B] shrink-0 mt-0.5" />
+            )}
+            <div>
+              <p className="font-semibold text-[#F3F4F6]">{smsNotification.title}</p>
+              <p className="text-[11px] opacity-90 mt-0.5">{smsNotification.message}</p>
+            </div>
+          </div>
+
+          <div className="flex items-center gap-2 shrink-0 self-end sm:self-center">
+            {smsNotification.canRetry && smsNotification.paymentId && (
+              <button
+                type="button"
+                disabled={retryingPaymentId === smsNotification.paymentId}
+                onClick={() => handleRetrySms(smsNotification.paymentId!)}
+                className="inline-flex items-center gap-1.5 px-3 py-1.5 bg-[#243244] hover:bg-gray-700 text-[#F3F4F6] border border-[#303B4D] rounded-lg font-medium text-xs transition-colors disabled:opacity-50"
+              >
+                <RefreshCw className={`w-3.5 h-3.5 ${retryingPaymentId === smsNotification.paymentId ? 'animate-spin' : ''}`} />
+                <span>{retryingPaymentId === smsNotification.paymentId ? 'Retrying...' : 'Retry SMS'}</span>
+              </button>
+            )}
+            <button
+              type="button"
+              onClick={() => setSmsNotification(null)}
+              aria-label="Dismiss notification"
+              className="p-1 text-[#9CA3AF] hover:text-[#F3F4F6] rounded transition-colors"
+            >
+              <X className="w-4 h-4" />
+            </button>
+          </div>
+        </div>
+      )}
 
       {/* Filter Bar */}
       <div className="bg-[#1F2937] border border-[#303B4D] rounded-lg p-4 flex flex-col md:flex-row items-center justify-between gap-3">
@@ -334,7 +451,34 @@ export const PaymentsPage: React.FC = () => {
                 </span>
               </div>
 
-              <div className="pt-2 border-t border-[#303B4D] flex justify-end">
+              <div className="pt-2 border-t border-[#303B4D] flex items-center justify-between gap-2">
+                <div className="flex items-center gap-1.5">
+                  <span
+                    title={p.smsError || ''}
+                    className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${
+                      p.smsStatus === 'sent'
+                        ? 'bg-emerald-500/10 text-[#22C55E] border-emerald-500/20'
+                        : p.smsStatus === 'failed'
+                        ? 'bg-red-500/10 text-[#EF4444] border-red-500/20'
+                        : 'bg-amber-500/10 text-[#F59E0B] border-amber-500/20'
+                    }`}
+                  >
+                    <MessageSquare className="w-2.5 h-2.5" />
+                    <span>{p.smsStatus === 'sent' ? 'SMS Sent' : p.smsStatus === 'failed' ? 'SMS Failed' : 'SMS Pending'}</span>
+                  </span>
+                  {p.smsStatus !== 'sent' && (
+                    <button
+                      type="button"
+                      disabled={retryingPaymentId === p.id}
+                      onClick={() => handleRetrySms(p.id)}
+                      className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#243244] hover:bg-gray-700 text-[#F59E0B] border border-[#303B4D] rounded text-[10px] font-medium transition-colors disabled:opacity-50"
+                    >
+                      <RefreshCw className={`w-2.5 h-2.5 ${retryingPaymentId === p.id ? 'animate-spin' : ''}`} />
+                      <span>{retryingPaymentId === p.id ? 'Sending...' : 'Retry'}</span>
+                    </button>
+                  )}
+                </div>
+
                 <button
                   disabled={printingPaymentId === p.id}
                   onClick={() => handleViewReceipt(p.id)}
@@ -364,18 +508,19 @@ export const PaymentsPage: React.FC = () => {
                 <th className="py-2.5 px-5 w-36">Class & Section</th>
                 <th className="py-2.5 px-5 w-32">Payment Date</th>
                 <th className="py-2.5 px-5 text-center w-28">Method</th>
-                <th className="py-2.5 px-5 text-right w-36">Amount Paid</th>
-                <th className="py-2.5 px-5 text-center w-36">Receipt Action</th>
+                <th className="py-2.5 px-5 text-right w-32">Amount Paid</th>
+                <th className="py-2.5 px-5 text-center w-36">SMS Status</th>
+                <th className="py-2.5 px-5 text-center w-40">Receipt Action</th>
               </tr>
             </thead>
             <tbody className="divide-y divide-[#303B4D] bg-[#1F2937]">
               {isLoading ? (
                 <tr>
-                  <td colSpan={7} className="py-10 text-center text-xs text-[#9CA3AF]">Loading payments ledger...</td>
+                  <td colSpan={8} className="py-10 text-center text-xs text-[#9CA3AF]">Loading payments ledger...</td>
                 </tr>
               ) : filteredPayments.length === 0 ? (
                 <tr>
-                  <td colSpan={7} className="py-12 text-center text-xs text-[#9CA3AF]">No payment receipts found matching your search.</td>
+                  <td colSpan={8} className="py-12 text-center text-xs text-[#9CA3AF]">No payment receipts found matching your search.</td>
                 </tr>
               ) : (
                 filteredPayments.map((p) => (
@@ -395,6 +540,34 @@ export const PaymentsPage: React.FC = () => {
                     </td>
                     <td className="py-2.5 px-5 text-right font-mono font-semibold text-[#22C55E] tabular-nums">
                       ₹ {p.amount?.toLocaleString('en-IN')}
+                    </td>
+                    <td className="py-2.5 px-5 text-center">
+                      <div className="inline-flex items-center gap-1.5">
+                        <span
+                          title={p.smsError || (p.smsRecipientPhone ? `Sent to ${p.smsRecipientPhone}` : '')}
+                          className={`inline-flex items-center gap-1 px-2 py-0.5 rounded text-[10px] font-medium border ${
+                            p.smsStatus === 'sent'
+                              ? 'bg-emerald-500/10 text-[#22C55E] border-emerald-500/20'
+                              : p.smsStatus === 'failed'
+                              ? 'bg-red-500/10 text-[#EF4444] border-red-500/20'
+                              : 'bg-amber-500/10 text-[#F59E0B] border-amber-500/20'
+                          }`}
+                        >
+                          <span>{p.smsStatus === 'sent' ? 'Sent' : p.smsStatus === 'failed' ? 'Failed' : 'Pending'}</span>
+                        </span>
+                        {p.smsStatus !== 'sent' && (
+                          <button
+                            type="button"
+                            disabled={retryingPaymentId === p.id}
+                            onClick={() => handleRetrySms(p.id)}
+                            title={p.smsError ? `Retry SMS (${p.smsError})` : 'Retry SMS confirmation'}
+                            className="inline-flex items-center gap-1 px-2 py-0.5 bg-[#243244] hover:bg-gray-700 text-[#F59E0B] border border-[#303B4D] rounded text-[10px] font-medium transition-colors disabled:opacity-50"
+                          >
+                            <RefreshCw className={`w-2.5 h-2.5 ${retryingPaymentId === p.id ? 'animate-spin' : ''}`} />
+                            <span>{retryingPaymentId === p.id ? '...' : 'Retry'}</span>
+                          </button>
+                        )}
+                      </div>
                     </td>
                     <td className="py-2.5 px-5 text-center">
                       <button

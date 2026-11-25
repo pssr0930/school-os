@@ -53,6 +53,38 @@ router.post('/', requireAuth, (req, res, next) => {
   }
 });
 
+// POST /api/payments/:id/retry-sms
+router.post('/:id/retry-sms', requireAuth, (req, res, next) => {
+  if (req.user?.role === 'admin') return next();
+  const perms = req.user?.permissions || [];
+  if (
+    perms.includes('payments.record') || 
+    perms.includes('fees.manage') ||
+    perms.includes('sms.send')
+  ) {
+    return next();
+  }
+  return res.status(403).json({ success: false, message: 'Missing required permission to retry payment SMS.' });
+}, async (req, res, next) => {
+  try {
+    const result = await PaymentService.retryPaymentSms(req.schoolId!, req.params.id, req.user!.userId);
+    if (!result) {
+      return res.status(404).json({ success: false, message: 'Payment record not found' });
+    }
+    res.json({
+      success: result.smsResult.status === 'sent',
+      message: result.alreadySent
+        ? 'SMS confirmation was already sent for this payment.'
+        : result.smsResult.status === 'sent'
+          ? `Confirmation SMS sent to ${result.smsResult.recipientPhone}`
+          : (result.smsResult.error || 'Failed to send confirmation SMS.'),
+      data: result
+    });
+  } catch (err) {
+    next(err);
+  }
+});
+
 // GET /api/payments/:id/receipt
 router.get('/:id/receipt', requireAuth, (req, res, next) => {
   if (req.user?.role === 'admin') return next();

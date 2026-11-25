@@ -160,6 +160,12 @@ export interface PaymentItem {
   recordedBy?: string;
   notes?: string;
   createdAt: string;
+  idempotencyKey?: string;
+  smsStatus?: 'pending' | 'sent' | 'failed';
+  smsError?: string;
+  smsSentAt?: string;
+  smsRecipientPhone?: string;
+  twilioMessageId?: string;
 }
 
 export interface AttendanceRecord {

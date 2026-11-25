@@ -217,6 +217,11 @@ CREATE TABLE IF NOT EXISTS public.payments (
     payment_date DATE NOT NULL DEFAULT CURRENT_DATE,
     recorded_by UUID REFERENCES public.profiles(id),
     notes TEXT,
+    sms_status VARCHAR(20) DEFAULT 'pending' CHECK (sms_status IN ('pending', 'sent', 'failed')),
+    sms_error TEXT,
+    sms_sent_at TIMESTAMPTZ,
+    sms_recipient_phone VARCHAR(20),
+    twilio_message_id VARCHAR(100),
     created_at TIMESTAMPTZ DEFAULT NOW(),
     UNIQUE(school_id, receipt_number)
 );

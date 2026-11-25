@@ -423,6 +423,16 @@ class InStore {
           recorded_by: p.recorded_by,
           recordedBy: p.recorded_by,
           notes: p.notes || '',
+          sms_status: p.sms_status || 'pending',
+          smsStatus: p.sms_status || 'pending',
+          sms_error: p.sms_error || '',
+          smsError: p.sms_error || '',
+          sms_sent_at: p.sms_sent_at || undefined,
+          smsSentAt: p.sms_sent_at || undefined,
+          sms_recipient_phone: p.sms_recipient_phone || '',
+          smsRecipientPhone: p.sms_recipient_phone || '',
+          twilio_message_id: p.twilio_message_id || '',
+          twilioMessageId: p.twilio_message_id || '',
           created_at: p.created_at || new Date().toISOString(),
           createdAt: p.created_at || new Date().toISOString()
         }));
